@@ -1,18 +1,18 @@
 package org.pqproject.backend.pojo;
 
-public class user {
-    private Long userId;
+public class User {
+    private String userId;
     private String email;
     private String password;
     private String username;
     private String userPhone;
-    private String role;
+    private int role;
 
-    public Long getUserId() {
+    public String getUserId() {
         return userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(String userId) {
         this.userId = userId;
     }
 
@@ -48,11 +48,11 @@ public class user {
         this.userPhone = userPhone;
     }
 
-    public String getRole() {
+    public int getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(int role) {
         this.role = role;
     }
 }
