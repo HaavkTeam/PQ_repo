@@ -1,6 +1,6 @@
 package org.pqproject.backend.pojo;
 
-public class question {
+public class Question {
     private Long questionId;
     private Long speechId;
     private String description;
