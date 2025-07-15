@@ -2,21 +2,21 @@ package org.pqproject.backend.pojo;
 
 import java.util.Date;
 
-public class speech {
-    private Long speechId;
+public class Speech {
+    private String speechId;
     private String title;
     private String description;
     private String organizer;
     private String speaker;
     private Date startTime;
     private Date endTime;
-    private String status;
+    private int status;
 
-    public Long getSpeechId() {
+    public String getSpeechId() {
         return speechId;
     }
 
-    public void setSpeechId(Long speechId) {
+    public void setSpeechId(String speechId) {
         this.speechId = speechId;
     }
 
@@ -68,11 +68,35 @@ public class speech {
         this.endTime = endTime;
     }
 
-    public String getStatus() {
+    public int getStatus() {
         return status;
     }
 
-    public void setStatus(String status) {
+    public void setStatus(int status) {
         this.status = status;
+    }
+
+    public void createDefaultSpeech() {
+        this.speechId = "0";
+        this.title = "Default Title";
+        this.description = "Default Description";
+        this.organizer = "Default Organizer";
+        this.speaker = "Default Speaker";
+        this.startTime = new Date();
+        this.endTime = new Date();
+        this.status = -1; // Default status
+    }
+
+    public String toString() {
+        return "Speech{" +
+                "speechId='" + speechId + '\'' +
+                ", title='" + title + '\'' +
+                ", description='" + description + '\'' +
+                ", organizer='" + organizer + '\'' +
+                ", speaker='" + speaker + '\'' +
+                ", startTime=" + startTime +
+                ", endTime=" + endTime +
+                ", status=" + status +
+                '}';
     }
 }
