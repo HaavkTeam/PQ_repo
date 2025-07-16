@@ -8,6 +8,7 @@ public class Comment {
     private String publisher;
     private String replyId;
     private Date time;
+    private String content; // 添加评论内容
 
     public String getCommentId() {
         return commentId;
@@ -47,5 +48,13 @@ public class Comment {
 
     public void setTime(Date time) {
         this.time = time;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public void setContent(String content) {
+        this.content = content;
     }
 }

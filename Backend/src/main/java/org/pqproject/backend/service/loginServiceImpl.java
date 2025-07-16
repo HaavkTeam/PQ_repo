@@ -39,4 +39,14 @@ public class loginServiceImpl implements loginService {
         }
         return false;
     }
+
+    /**
+     * Retrieves a user by their ID.
+     *
+     * @param userId The ID of the user to retrieve.
+     * @return The User object if found, null otherwise.
+     */
+    public User getUserById(String userId) {
+        return userMapper.getUserById(userId);
+    } // Return the user with the specified ID
 }

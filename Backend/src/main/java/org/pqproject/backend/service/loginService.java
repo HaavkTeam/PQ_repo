@@ -6,4 +6,6 @@ public interface loginService {
     public boolean validateUser(String email, String password);
 
     public boolean registerUser(User user);
+
+    public User getUserById(String userId);
 }

@@ -9,7 +9,7 @@ import java.util.List;
 @Mapper
 public interface CommentMapper {
     //添加评论
-    @Insert("INSERT INTO commenttable VALUES (#{commentId}, #{questionId}, #{publisher}, #{replyId}, #{time})")
+    @Insert("INSERT INTO commenttable VALUES (#{commentId}, #{questionId}, #{publisher}, #{replyId}, #{time},#{content})")
     void addComment(Comment comment);
 
     //删除评论
@@ -19,4 +19,7 @@ public interface CommentMapper {
     //获取不同题目的评论
      @Select("SELECT * FROM commenttable WHERE questionId = #{questionId}")
      List<Comment> getCommentsByQuestionId(String questionId);
+
+     @Select("SELECT publisher FROM commenttable WHERE commentId = #{commentId}")
+        String getPublisherById(String commentId);
 }

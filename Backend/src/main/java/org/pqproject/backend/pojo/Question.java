@@ -9,7 +9,7 @@ public class Question {
     private String optionC;
     private String optionD;
     private String answer;
-    private Boolean used;
+    private Boolean isUsed;
 
     public Long getQuestionId() {
         return questionId;
@@ -75,11 +75,11 @@ public class Question {
         this.answer = answer;
     }
 
-    public Boolean getUsed() {
-        return used;
+    public Boolean getIsUsed() {
+        return isUsed;
     }
 
-    public void setUsed(Boolean used) {
-        this.used = used;
+    public void setIsUsed(Boolean isUsed) {
+        this.isUsed = isUsed;
     }
 }
