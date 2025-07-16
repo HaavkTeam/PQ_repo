@@ -13,4 +13,7 @@ public interface userMapper {
 
     @Insert("INSERT INTO usertable VALUES (#{userId},#{email}, #{password}, #{username},#{userPhone}, #{role})")
     public void insertUser(User user);
+
+    @Select("SELECT * FROM usertable WHERE userId = #{userId}")
+    public User getUserById(String userId);
 }

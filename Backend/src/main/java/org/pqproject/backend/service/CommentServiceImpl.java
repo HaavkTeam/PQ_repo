@@ -2,8 +2,11 @@ package org.pqproject.backend.service;
 
 import org.pqproject.backend.mapper.CommentMapper;
 import org.pqproject.backend.pojo.Comment;
+import org.pqproject.backend.pojo.ReturnComment;
+import org.pqproject.backend.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.pqproject.backend.service.loginService;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -15,6 +18,8 @@ public class CommentServiceImpl implements CommentService {
 
     @Autowired
     private CommentMapper commentMapper;
+    @Autowired
+    private loginService userService;
 
     // 实现添加评论的方法
     @Override
@@ -42,9 +47,32 @@ public class CommentServiceImpl implements CommentService {
 
     // 实现获取评论的方法
     @Override
-    public List<Comment> getCommentsByQuestionId(String questionId) {
+    public List<ReturnComment> getCommentsByQuestionId(String questionId) {
         try {
-            return commentMapper.getCommentsByQuestionId(questionId);
+            List<Comment> comments = new ArrayList<>();
+            List<ReturnComment> returnComments = new ArrayList<>();
+            comments = commentMapper.getCommentsByQuestionId(questionId);
+            for (Comment comment : comments) {
+                // 设置评论的回复者昵称
+                User user1 = userService.getUserById(comment.getPublisher());
+                System.out.println("Publisher: " + comment.getReplyId());
+                System.out.println("Publisher: " + commentMapper.getPublisherById(comment.getReplyId()));
+                User user2 = userService.getUserById(commentMapper.getPublisherById(comment.getReplyId()));
+                if (user1 != null) {
+                    ReturnComment returnComment = new ReturnComment();
+                    if( user2 != null) {
+                        returnComment.createReturnComment(returnComment,comment,user1.getUsername(), user2.getUsername());
+                        String str = returnComment.toString();
+                        System.out.println("ReturnComment: " + str);
+                    } else {
+                        returnComment.createReturnComment(returnComment,comment, user1.getUsername(), "myself");
+                    }
+                    returnComments.add(returnComment);
+                } else {
+
+                }
+            }
+            return returnComments; // 返回指定题目的评论列表
             //return sortComments(commentMapper.getCommentsByQuestionId(questionId)); // 返回指定题目的评论列表
         } catch (Exception e) {
             e.printStackTrace();
@@ -52,37 +80,5 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
-    // 实现排序评论的方法
-    @Override
-    public List<Comment> sortComments(List<Comment> comments) {
-        // 构建id到评论的映射
-        Map<String, Comment> idMap = new HashMap<>();
-        for (Comment c : comments) {
-            idMap.put(c.getCommentId(), c);
-        }
-
-        // 构建父评论到子评论的映射
-        Map<String, List<Comment>> childrenMap = new HashMap<>();
-        for (Comment c : comments) {
-            String parentId = c.getReplyId();
-            childrenMap.computeIfAbsent(parentId, k -> new ArrayList<>()).add(c);
-        }
-
-        List<Comment> result = new ArrayList<>();
-        // 递归添加所有顶级评论及其子评论
-        addChildren(null, childrenMap, result);
-        return result;
-    }
-
-    private void addChildren(String parentId, Map<String, List<Comment>> childrenMap, List<Comment> result) {
-        List<Comment> children = childrenMap.get(parentId);
-        if (children == null) return;
-        // 可按时间等排序
-        // children.sort(Comparator.comparing(Comment::getCreateTime));
-        for (Comment c : children) {
-            result.add(c);
-            addChildren(c.getCommentId(), childrenMap, result);
-        }
-    }
 
 }

@@ -1,9 +1,12 @@
 package org.pqproject.backend.service;
 
 import org.pqproject.backend.pojo.Comment;
+import org.pqproject.backend.pojo.ReturnComment;
+import org.springframework.stereotype.Service;
 
 import java.util.List;
 
+@Service
 public interface CommentService {
     //发表评论
     boolean addComment(Comment comment);
@@ -12,9 +15,6 @@ public interface CommentService {
     boolean deleteComment(String commentId);
 
     //获取评论
-    List<Comment> getCommentsByQuestionId(String questionId);
-
-    //排序评论，根据回复关系排序评论
-    List<Comment> sortComments(List<Comment> comments);
+    List<ReturnComment> getCommentsByQuestionId(String questionId);
 
 }
