@@ -1,5 +1,6 @@
 package org.pqproject.backend.controller;
 
+import org.pqproject.backend.pojo.ReturnSpeech;
 import org.pqproject.backend.pojo.Speech;
 import org.pqproject.backend.service.SpeechService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +19,13 @@ public class SpeechController {
     private SpeechService speechService;
 
     @RequestMapping("/getSpeechById")
-    public Speech getSpeechById(@RequestParam String speechId) {
+    public ReturnSpeech getSpeechById(@RequestParam String speechId) {
         return speechService.getSpeechById(speechId); // Return the speech details as a string
     }
 
+    //获取所有演讲
     @RequestMapping("/getAllSpeeches")
-    public List<Speech> getAllSpeeches() {
+    public List<ReturnSpeech> getAllSpeeches() {
         return speechService.getAllSpeeches(); // Return the list of all speeches
     }
 
@@ -54,11 +56,6 @@ public class SpeechController {
         }
     }
 
-    @RequestMapping("/test")
-    public String test() {
-        return "测试成功"; // Return a success message for testing purposes
-    }
-
     @RequestMapping("/startSpeech")
     public String startSpeech(@RequestParam String speechId) {
         speechService.startSpeech(speechId, new Date()); // Start the speech with the current time
@@ -69,5 +66,33 @@ public class SpeechController {
     public String endSpeech(@RequestParam String speechId) {
         speechService.endSpeech(speechId, new Date()); // End the speech with the current time
         return "演讲已结束"; // Return a success message indicating the speech has ended
+    }
+
+    // 用户加入演讲
+    @RequestMapping("/joinSpeech")
+    public String joinSpeech(@RequestParam String speechId, @RequestParam String userId) {
+        if (speechService.joinSpeech(speechId, userId)) {
+            return "用户已加入演讲"; // Return a success message indicating the user has joined the speech
+        } else {
+            return "用户加入演讲失败，可能是演讲ID不存在或用户已加入"; // Return an error message
+        }
+    }
+
+    //用户查看自己参与过的演讲
+    @RequestMapping("/getMySpeeches")
+    public List<ReturnSpeech> getMySpeeches(@RequestParam String userId) {
+        return speechService.getMySpeeches(userId); // Return the list of speeches the user has joined
+    }
+
+    //演讲者获取自己主讲的所有演讲
+    @RequestMapping("/getSpeechesBySpeaker")
+    public List<ReturnSpeech> getSpeechesBySpeaker(@RequestParam("userId") String userId) {
+        return speechService.getSpeechesBySpeaker(userId);
+    }
+
+    //组织者获取自己组织的所有演讲
+    @RequestMapping("/getSpeechesByOrganizer")
+    public List<ReturnSpeech> getSpeechesByOrganizer(@RequestParam("userId") String userId) {
+        return speechService.getSpeechesByOrganizer(userId); // Return the list of speeches organized by the user
     }
 }

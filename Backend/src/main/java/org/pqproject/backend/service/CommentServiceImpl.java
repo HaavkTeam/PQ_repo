@@ -55,8 +55,6 @@ public class CommentServiceImpl implements CommentService {
             for (Comment comment : comments) {
                 // 设置评论的回复者昵称
                 User user1 = userService.getUserById(comment.getPublisher());
-                System.out.println("Publisher: " + comment.getReplyId());
-                System.out.println("Publisher: " + commentMapper.getPublisherById(comment.getReplyId()));
                 User user2 = userService.getUserById(commentMapper.getPublisherById(comment.getReplyId()));
                 if (user1 != null) {
                     ReturnComment returnComment = new ReturnComment();
