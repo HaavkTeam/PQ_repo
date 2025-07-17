@@ -32,4 +32,18 @@ public interface SpeechMapper {
     //结束演讲
     @Update("UPDATE speechtable SET status = 2 ,endTime = #{endTime} WHERE speechId = #{speechId}")
     void endSpeech(String speechId, Date endTime);
+
+    //用户加入演讲
+    @Insert("INSERT INTO surelation (speechId, userId) VALUES (#{speechId}, #{userId})")
+    void joinSpeech(String speechId, String userId);
+
+    //获取用户参与的演讲
+    @Select("SELECT speechId FROM surelation WHERE userId = #{userId}")
+    List<String> getMySpeeches(String userId);
+
+    @Select("SELECT * FROM speechtable WHERE speaker = #{speaker}")
+    List<Speech> getSpeechesBySpeaker(String speaker);
+
+    @Select("SELECT * FROM speechtable WHERE organizer = #{organizer}")
+    List<Speech> getSpeechesByOrganizer(String organizer);
 }

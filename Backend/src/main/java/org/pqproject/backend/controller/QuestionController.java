@@ -1,8 +1,11 @@
 package org.pqproject.backend.controller;
 
 import org.pqproject.backend.pojo.Question;
+import org.pqproject.backend.pojo.ReturnSubmit;
+import org.pqproject.backend.pojo.UserSubmit;
 import org.pqproject.backend.service.QuestionService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -27,5 +30,22 @@ public class QuestionController {
     public List<Question> launchQuestion(@RequestParam("speechId") String speechId) {
         return questionService.launchQuestion(speechId);
     }
+
+    //听众提交答案
+    @RequestMapping("/submitAnswer")
+    public String submitAnswer(@RequestBody UserSubmit submitAnswer) {
+        if (questionService.submitAnswer(submitAnswer)) {
+            return "答案提交成功"; // Return a success message
+        } else {
+            return "该题目已经作答，不可继续作答"; // Return an error message
+        }
+    }
+
+    //听众查看自己的做题情况
+    @RequestMapping("/getMySubmit")
+    public List<ReturnSubmit> getMySubmit(@RequestParam("userId") String userId, @RequestParam("speechId") String speechId) {
+        return questionService.getMySubmit(userId, speechId);
+    }
+
 
 }

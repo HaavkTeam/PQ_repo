@@ -1,6 +1,9 @@
 package org.pqproject.backend.service;
 
 import org.pqproject.backend.pojo.Question;
+import org.pqproject.backend.pojo.ReturnSubmit;
+import org.pqproject.backend.pojo.UserSubmit;
+
 import java.util.List;
 
 public interface QuestionService {
@@ -15,4 +18,7 @@ public interface QuestionService {
 
     List<Question> launchQuestion(String speechId);
 
+    boolean submitAnswer(UserSubmit submitAnswer);
+
+    List<ReturnSubmit> getMySubmit(String userId, String speechId);
 }

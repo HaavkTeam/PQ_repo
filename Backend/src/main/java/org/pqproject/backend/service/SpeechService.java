@@ -1,5 +1,7 @@
 package org.pqproject.backend.service;
 
+import org.pqproject.backend.pojo.Question;
+import org.pqproject.backend.pojo.ReturnSpeech;
 import org.pqproject.backend.pojo.Speech;
 
 import java.util.Date;
@@ -12,14 +14,14 @@ public interface SpeechService {
      * @param speechId the ID of the speech
      * @return the Speech object if found, null otherwise
      */
-    Speech getSpeechById(String speechId);
+    ReturnSpeech getSpeechById(String speechId);
 
     /**
      * Retrieves all speeches.
      *
      * @return a list of all Speech objects
      */
-    List<Speech> getAllSpeeches();
+    List<ReturnSpeech> getAllSpeeches();
 
     /**
      * Adds a new speech.
@@ -54,4 +56,12 @@ public interface SpeechService {
     void startSpeech(String speechId, Date startTime);
 
     void endSpeech(String speechId, Date endTime);
+
+    boolean joinSpeech(String speechId, String userId);
+
+    List<ReturnSpeech> getMySpeeches(String userId);
+
+    List<ReturnSpeech> getSpeechesBySpeaker(String userId);
+
+    List<ReturnSpeech> getSpeechesByOrganizer(String userId);
 }
