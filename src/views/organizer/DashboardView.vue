@@ -12,15 +12,25 @@
         <el-table :data="lectures" style="width: 100%">
           <el-table-column prop="title" label="演讲标题" />
           <el-table-column prop="speaker" label="演讲者" />
-          <el-table-column prop="status" label="状态">
+          <el-table-column prop="createTime" label="创建时间" />
+          <el-table-column prop="code" label="验证码" width="100" />
+          <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
               <el-tag :type="row.status === 'active' ? 'success' : 'info'">
                 {{ row.status === 'active' ? '进行中' : '已结束' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作">
+          <el-table-column label="操作" width="200">
             <template #default="{ row }">
+              <el-button
+                v-if="row.status === 'active'"
+                type="primary"
+                size="small"
+                @click="enterLecture(row)"
+              >
+                进入演讲
+              </el-button>
               <el-button
                 type="danger"
                 size="small"
@@ -66,6 +76,9 @@
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 // 定义演讲类型接口
 interface Lecture {
@@ -73,16 +86,34 @@ interface Lecture {
   speaker: string
   description: string
   status: 'active' | 'ended'
+  createTime: string
+  code: string
 }
 
 // 演讲列表数据
-const lectures = ref<Lecture[]>([]) // 明确指定数组元素类型为 Lecture
+const lectures = ref<Lecture[]>([
+  {
+    title: 'Vue.js 高级开发技巧',
+    speaker: '张三',
+    description: 'Vue.js 高级特性和最佳实践分享',
+    status: 'active',
+    createTime: '2024-01-20 14:30',
+    code: 'ABC123',
+  },
+  {
+    title: 'React 状态管理',
+    speaker: '李四',
+    description: 'React 状态管理方案对比',
+    status: 'ended',
+    createTime: '2024-01-19 10:00',
+    code: 'XYZ789',
+  },
+])
 
 // 创建演讲表单
 const createDialogVisible = ref(false)
 const lectureFormRef = ref()
-const lectureForm = reactive<Omit<Lecture, 'status'>>({
-  // 使用 Omit 排除 status 字段
+const lectureForm = reactive<Omit<Lecture, 'status' | 'createTime' | 'code'>>({
   title: '',
   speaker: '',
   description: '',
@@ -103,6 +134,16 @@ const showCreateDialog = () => {
   lectureForm.description = ''
 }
 
+// 生成随机验证码
+const generateCode = () => {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  let code = ''
+  for (let i = 0; i < 6; i++) {
+    code += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return code
+}
+
 // 创建演讲
 const handleCreateLecture = async () => {
   if (!lectureFormRef.value) return
@@ -113,6 +154,8 @@ const handleCreateLecture = async () => {
       const newLecture: Lecture = {
         ...lectureForm,
         status: 'active',
+        createTime: new Date().toLocaleString(),
+        code: generateCode(),
       }
       lectures.value.push(newLecture)
       ElMessage.success('演讲创建成功')
@@ -123,7 +166,6 @@ const handleCreateLecture = async () => {
 
 // 结束演讲
 const handleEndLecture = (lecture: Lecture) => {
-  // 修改参数类型
   ElMessageBox.confirm('确定要结束这场演讲吗？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
@@ -137,6 +179,11 @@ const handleEndLecture = (lecture: Lecture) => {
     .catch(() => {
       // 取消操作
     })
+}
+
+// 进入演讲
+const enterLecture = (lecture: Lecture) => {
+  router.push(`/organizer/lecture?code=${lecture.code}`)
 }
 </script>
 
