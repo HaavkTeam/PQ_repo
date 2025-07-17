@@ -40,6 +40,10 @@ const router = createRouter({
           path: 'dashboard',
           component: () => import('../views/organizer/DashboardView.vue'),
         },
+        {
+          path: 'lecture',
+          component: () => import('../views/organizer/LectureView.vue'),
+        },
       ],
     },
     {
@@ -48,6 +52,10 @@ const router = createRouter({
         {
           path: 'dashboard',
           component: () => import('../views/teacher/DashboardView.vue'),
+        },
+        {
+          path: 'lecture',
+          component: () => import('../views/teacher/LectureView.vue'),
         },
       ],
     },
