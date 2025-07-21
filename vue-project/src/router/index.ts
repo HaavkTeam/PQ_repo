@@ -27,6 +27,36 @@ const router = createRouter({
           path: 'dashboard',
           component: () => import('../views/student/DashboardView.vue'),
         },
+        {
+          path: 'quiz',
+          component: () => import('../views/student/QuizView.vue'),
+        },
+      ],
+    },
+    {
+      path: '/organizer',
+      children: [
+        {
+          path: 'dashboard',
+          component: () => import('../views/organizer/DashboardView.vue'),
+        },
+        {
+          path: 'lecture',
+          component: () => import('../views/organizer/LectureView.vue'),
+        },
+      ],
+    },
+    {
+      path: '/teacher',
+      children: [
+        {
+          path: 'dashboard',
+          component: () => import('../views/teacher/DashboardView.vue'),
+        },
+        {
+          path: 'lecture',
+          component: () => import('../views/teacher/LectureView.vue'),
+        },
       ],
     },
   ],
