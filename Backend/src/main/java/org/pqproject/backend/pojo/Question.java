@@ -82,4 +82,16 @@ public class Question {
     public void setIsUsed(Boolean isUsed) {
         this.isUsed = isUsed;
     }
+
+    public void createDefault() {
+        this.questionId = "";
+        this.speechId = "";
+        this.description = "default";
+        this.optionA = "";
+        this.optionB = "";
+        this.optionC = "";
+        this.optionD = "";
+        this.answer = "";
+        this.isUsed = false;
+    }
 }

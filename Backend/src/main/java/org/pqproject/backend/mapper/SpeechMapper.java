@@ -2,6 +2,7 @@ package org.pqproject.backend.mapper;
 
 import org.apache.ibatis.annotations.*;
 import org.pqproject.backend.pojo.Speech;
+import org.pqproject.backend.pojo.Spit;
 
 import java.util.Date;
 import java.util.List;
@@ -46,4 +47,13 @@ public interface SpeechMapper {
 
     @Select("SELECT * FROM speechtable WHERE organizer = #{organizer}")
     List<Speech> getSpeechesByOrganizer(String organizer);
+
+    @Insert("INSERT INTO spittable (spitId, speechId, content, time) VALUES (#{spitId}, #{speechId}, #{content}, #{time})")
+    void spikeSpeech(Spit spit);
+
+    @Select("SELECT * FROM spittable WHERE speechId = #{speechId}")
+    List<Spit> getSpitsBySpeechId(String speechId);
+
+    @Select("SELECT userId FROM surelation WHERE speechId = #{speechId}")
+    List<String> getUsersBySpeechId(String speechId);
 }

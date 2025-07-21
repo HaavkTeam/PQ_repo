@@ -25,6 +25,8 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public boolean addComment(Comment comment) {
         try {
+            String commentId = getUppercaseLetterAndNumber(8); // 生成一个8位的随机评论ID
+            comment.setCommentId(commentId); // 设置评论ID
             commentMapper.addComment(comment);
             return true; // 添加成功
         } catch (Exception e) {
@@ -76,6 +78,26 @@ public class CommentServiceImpl implements CommentService {
             e.printStackTrace();
             return null; // 获取评论失败
         }
+    }
+
+    public  String getUppercaseLetterAndNumber(Integer length) {
+        String uid = "";
+        for (Integer i = 0; i < length; i++) {
+            int index = (int) Math.round(Math.random() * 1);
+            String randChar = "";
+            switch (index) {
+                case 0:
+                    //大写字符
+                    randChar = String.valueOf((char) Math.round(Math.random() * 25 + 97));
+                    break;
+                default:
+                    //数字
+                    randChar = String.valueOf(Math.round(Math.random() * 9));
+                    break;
+            }
+            uid = uid.concat(randChar);
+        }
+        return uid;
     }
 
 

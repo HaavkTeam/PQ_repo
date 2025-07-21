@@ -34,6 +34,9 @@ public class loginServiceImpl implements loginService {
      */
     public boolean registerUser(User user) {
         if (userMapper.getUserByEmail(user.getEmail()) == null) {
+            // Generate a unique user ID
+            String userId = getUppercaseLetterAndNumber(8); // Generate a random 8-character ID
+            user.setUserId(userId); // Set the generated user ID
             userMapper.insertUser(user);
             return true;
         }
@@ -49,4 +52,24 @@ public class loginServiceImpl implements loginService {
     public User getUserById(String userId) {
         return userMapper.getUserById(userId);
     } // Return the user with the specified ID
+
+    public  String getUppercaseLetterAndNumber(Integer length) {
+        String uid = "";
+        for (Integer i = 0; i < length; i++) {
+            int index = (int) Math.round(Math.random() * 1);
+            String randChar = "";
+            switch (index) {
+                case 0:
+                    //大写字符
+                    randChar = String.valueOf((char) Math.round(Math.random() * 25 + 97));
+                    break;
+                default:
+                    //数字
+                    randChar = String.valueOf(Math.round(Math.random() * 9));
+                    break;
+            }
+            uid = uid.concat(randChar);
+        }
+        return uid;
+    }
 }

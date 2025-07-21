@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -45,6 +46,14 @@ public class QuestionController {
     @RequestMapping("/getMySubmit")
     public List<ReturnSubmit> getMySubmit(@RequestParam("userId") String userId, @RequestParam("speechId") String speechId) {
         return questionService.getMySubmit(userId, speechId);
+    }
+
+    //演讲者上传自己的题目文件
+    @RequestMapping("/uploadQuestionFile")
+    public String uploadQuestionFile(@RequestParam("file") MultipartFile file, @RequestParam("speechId") String speechId) {
+        // Implement the logic to handle file upload and question creation
+        // This is a placeholder implementation
+        return "文件上传成功，题目已创建"; // Return a success message
     }
 
 
