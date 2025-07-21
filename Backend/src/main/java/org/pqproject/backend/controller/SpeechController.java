@@ -2,6 +2,7 @@ package org.pqproject.backend.controller;
 
 import org.pqproject.backend.pojo.ReturnSpeech;
 import org.pqproject.backend.pojo.Speech;
+import org.pqproject.backend.pojo.Spit;
 import org.pqproject.backend.service.SpeechService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -94,5 +95,27 @@ public class SpeechController {
     @RequestMapping("/getSpeechesByOrganizer")
     public List<ReturnSpeech> getSpeechesByOrganizer(@RequestParam("userId") String userId) {
         return speechService.getSpeechesByOrganizer(userId); // Return the list of speeches organized by the user
+    }
+
+    //组织者或演讲者获取听众列表
+    @RequestMapping("/getAudienceBySpeechId")
+    public List<String> getAudienceBySpeechId(@RequestParam String speechId) {
+        return speechService.getAudienceBySpeechId(speechId); // Return the list of audience members for the specified speech
+    }
+
+    //听众吐槽演讲情况
+    @RequestMapping("/SpikeSpeech")
+    public String SpikeSpeech(@RequestBody Spit spit) {
+        if (speechService.spikeSpeech(spit)) {
+            return "演讲吐槽成功"; // Return a success message indicating the feedback was successful
+        } else {
+            return "演讲吐槽失败，可能是演讲ID不存在或用户未加入演讲"; // Return an error message
+        }
+    }
+
+    //组织者或演讲者获取演讲的所有吐槽
+    @RequestMapping("/getSpitsBySpeechId")
+    public List<Spit> getSpitsBySpeechId(@RequestParam String speechId) {
+        return speechService.getSpitsBySpeechId(speechId); // Return the list of feedback for the specified speech
     }
 }

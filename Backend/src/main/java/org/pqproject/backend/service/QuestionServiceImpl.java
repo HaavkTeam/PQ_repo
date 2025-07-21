@@ -22,7 +22,22 @@ public class QuestionServiceImpl implements QuestionService {
 
     @Override
     public List<Question> launchQuestion(String speechId) {
-        return questionMapper.getUnusedQuestion(speechId);
+        List<Question> questions =  questionMapper.getUnusedQuestion(speechId);
+        if (questions.isEmpty()) {
+            Question noQuestion = new Question();
+            noQuestion.createDefault();
+            questions.add(noQuestion); // Add a default question indicating no unused questions
+            return questions; // No unused questions available
+        }
+        else {
+            String testId = getUppercaseLetterAndNumber(8);
+            questionMapper.insertTsRelation(testId, speechId);
+            for (Question question : questions) {
+                questionMapper.insertTqRelation(testId, question.getQuestionId());
+                questionMapper.updateQuestionUsedStatus(question.getQuestionId());
+            }
+        }
+        return questions;
     }
 
     @Override
@@ -67,5 +82,25 @@ public class QuestionServiceImpl implements QuestionService {
             }
         }
         return returnSubmits;
+    }
+
+    public  String getUppercaseLetterAndNumber(Integer length) {
+        String uid = "";
+        for (Integer i = 0; i < length; i++) {
+            int index = (int) Math.round(Math.random() * 1);
+            String randChar = "";
+            switch (index) {
+                case 0:
+                    //大写字符
+                    randChar = String.valueOf((char) Math.round(Math.random() * 25 + 97));
+                    break;
+                default:
+                    //数字
+                    randChar = String.valueOf(Math.round(Math.random() * 9));
+                    break;
+            }
+            uid = uid.concat(randChar);
+        }
+        return uid;
     }
 }

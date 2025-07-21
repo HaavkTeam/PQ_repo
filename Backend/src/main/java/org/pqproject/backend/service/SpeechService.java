@@ -3,6 +3,7 @@ package org.pqproject.backend.service;
 import org.pqproject.backend.pojo.Question;
 import org.pqproject.backend.pojo.ReturnSpeech;
 import org.pqproject.backend.pojo.Speech;
+import org.pqproject.backend.pojo.Spit;
 
 import java.util.Date;
 import java.util.List;
@@ -64,4 +65,10 @@ public interface SpeechService {
     List<ReturnSpeech> getSpeechesBySpeaker(String userId);
 
     List<ReturnSpeech> getSpeechesByOrganizer(String userId);
+
+    boolean spikeSpeech(Spit spit);
+
+    List<Spit> getSpitsBySpeechId(String speechId);
+
+    List<String> getAudienceBySpeechId(String speechId);
 }

@@ -2,6 +2,7 @@ package org.pqproject.backend.service;
 
 import org.pqproject.backend.pojo.ReturnSpeech;
 import org.pqproject.backend.pojo.Speech;
+import org.pqproject.backend.pojo.Spit;
 import org.pqproject.backend.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.pqproject.backend.mapper.SpeechMapper;
@@ -143,6 +144,46 @@ public class SpeechServiceImpl implements SpeechService {
         return myReturnSpeeches;
     }
 
+    public List<String> getAudienceBySpeechId(String speechId) {
+        Speech existingSpeech = speechMapper.getSpeechById(speechId);
+        if (existingSpeech == null) {
+            return new ArrayList<>(); // Return an empty list if the speech does not exist
+        } else {
+            // Retrieve the audience members for the given speech ID
+            List<String> audienceNames = new ArrayList<>();
+            List<String> audienceIds = speechMapper.getUsersBySpeechId(speechId);
+            for (String audience : audienceIds) {
+                User user = userMapper.getUserById(audience);
+                if (user != null) {
+                    audienceNames.add(user.getUsername()); // Add the username to the list
+                } else {
+                    audienceNames.add("未知用户"); // Default username if user not found
+                }
+            }
+            return audienceNames; // Retrieve all audience members for the given speech ID
+        }
+    }
+    public boolean spikeSpeech(Spit spit) {
+        Speech existingSpeech = speechMapper.getSpeechById(spit.getSpeechId());
+        String spitId = getUppercaseLetterAndNumber(8);
+        spit.setSpitId(spitId); // Set a unique spit ID
+        if (existingSpeech == null) {
+            return false; // Speech with this ID does not exist
+        } else {
+            speechMapper.spikeSpeech(spit);
+            return true; // Spit added successfully
+        }
+    }
+
+    public List<Spit> getSpitsBySpeechId(String speechId) {
+        Speech existingSpeech = speechMapper.getSpeechById(speechId);
+        if (existingSpeech == null) {
+            return new ArrayList<>(); // Return an empty list if the speech does not exist
+        } else {
+            return speechMapper.getSpitsBySpeechId(speechId); // Retrieve all spits for the given speech ID
+        }
+    }
+
     public ReturnSpeech transformToReturnSpeech(Speech speech) {
         User speaker = userMapper.getUserById(speech.getSpeaker());
         if (speaker == null) {
@@ -157,5 +198,25 @@ public class SpeechServiceImpl implements SpeechService {
         ReturnSpeech returnSpeech = new ReturnSpeech();
         returnSpeech.createReturnSpeech(speech, speaker.getUsername(), organizer.getUsername());
         return returnSpeech; // Transform Speech to ReturnSpeech
+    }
+
+    public  String getUppercaseLetterAndNumber(Integer length) {
+        String uid = "";
+        for (Integer i = 0; i < length; i++) {
+            int index = (int) Math.round(Math.random() * 1);
+            String randChar = "";
+            switch (index) {
+                case 0:
+                    //大写字符
+                    randChar = String.valueOf((char) Math.round(Math.random() * 25 + 97));
+                    break;
+                default:
+                    //数字
+                    randChar = String.valueOf(Math.round(Math.random() * 9));
+                    break;
+            }
+            uid = uid.concat(randChar);
+        }
+        return uid;
     }
 }
