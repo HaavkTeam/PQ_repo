@@ -1,10 +1,10 @@
+# processors.py - 文件处理
 import os
 import pdfplumber
 from pptx import Presentation
 import speech_recognition as sr
 import tempfile
 from typing import Optional
-
 
 def extract_text_from_pdf(file_path: str) -> str:
     """从PDF提取文本"""
@@ -16,7 +16,6 @@ def extract_text_from_pdf(file_path: str) -> str:
                 text += page_text + "\n"
     return text.strip()
 
-
 def extract_text_from_pptx(file_path: str) -> str:
     """从PPTX提取文本"""
     prs = Presentation(file_path)
@@ -26,7 +25,6 @@ def extract_text_from_pptx(file_path: str) -> str:
             if hasattr(shape, "text") and shape.text.strip():
                 text += shape.text + "\n"
     return text.strip()
-
 
 def extract_text_from_audio(file_path: str, language: str = "zh-CN") -> str:
     """从音频文件转文本"""
@@ -39,7 +37,6 @@ def extract_text_from_audio(file_path: str, language: str = "zh-CN") -> str:
             return ""
         except sr.RequestError as e:
             raise RuntimeError(f"语音识别服务错误: {e}")
-
 
 def process_uploaded_file(file: bytes, file_type: str) -> str:
     """处理上传的文件并提取文本"""
