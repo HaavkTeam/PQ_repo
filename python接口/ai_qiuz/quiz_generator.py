@@ -1,11 +1,16 @@
+# quiz_generator.py
 import re
 import requests
-from typing import List, Dict
+import uuid
+import logging
+from typing import List
 from config import settings
-from schemas import QuizItem
+from schemas import QuestionItem
+
+logger = logging.getLogger(__name__)
 
 
-def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[QuizItem]:
+def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[QuestionItem]:
     """使用DeepSeek API生成选择题"""
     system_prompt = f"""
     你是一位专业的教育内容设计师，请根据提供的教学内容生成{num_questions}道高质量选择题。要求：
@@ -21,7 +26,7 @@ def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[QuizIt
     }
 
     payload = {
-        "model": "deepseek-llm-r1",
+        "model": "deepseek-chat",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": content[:settings.MAX_TEXT_LENGTH]}
@@ -30,43 +35,59 @@ def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[QuizIt
         "max_tokens": 2000
     }
 
-    response = requests.post(settings.DEEPSEEK_API_URL, json=payload, headers=headers)
-    response.raise_for_status()
+    try:
+        logger.info("调用DeepSeek API生成题目...")
+        response = requests.post(settings.DEEPSEEK_API_URL, json=payload, headers=headers)
+        response.raise_for_status()
+        logger.info("DeepSeek API调用成功")
+        return parse_quiz_output(response.json()["choices"][0]["message"]["content"])
+    except Exception as e:
+        logger.error(f"DeepSeek API调用失败: {str(e)}")
+        return []
 
-    return parse_quiz_output(response.json()["choices"][0]["message"]["content"])
 
-
-def parse_quiz_output(raw_text: str) -> List[QuizItem]:
+def parse_quiz_output(raw_text: str) -> List[QuestionItem]:
     """解析模型输出的题目文本为结构化数据"""
-    quizzes = []
-    # 改进的正则表达式，匹配更灵活的格式
-    pattern = r"(问题\d*[:：]?\s*(.*?))\s*\n(A[.:]\s*(.*?)\s*\nB[.:]\s*(.*?)\s*\nC[.:]\s*(.*?)\s*\nD[.:]\s*(.*?)\s*\n答案[:：]\s*([A-D])\s*\n解析[:：]\s*(.*?)(?=\n\n|\n问题|$))"
+    logger.info("解析题目输出...")
+    questions = []
 
-    matches = re.findall(pattern, raw_text, re.DOTALL | re.IGNORECASE)
+    # 改进的正则表达式
+    pattern = r"问题[\d：]*\s*(.*?)\s*A[.:]?\s*(.*?)\s*B[.:]?\s*(.*?)\s*C[.:]?\s*(.*?)\s*D[.:]?\s*(.*?)\s*答案[:：\s]*([A-D])"
+
+    matches = re.findall(pattern, raw_text, re.DOTALL)
+
+    if not matches:
+        logger.warning(f"无法解析题目，原始输出:\n{raw_text}")
+        return questions
 
     for match in matches:
         try:
-            _, question, _, opt_a, opt_b, opt_c, opt_d, answer, explanation = match
+            description, optA, optB, optC, optD, answer = match
 
-            # 清理选项文本
-            options = [
-                f"A. {opt_a.strip()}",
-                f"B. {opt_b.strip()}",
-                f"C. {opt_c.strip()}",
-                f"D. {opt_d.strip()}"
-            ]
+            # 清理文本中的多余空格
+            clean = lambda s: re.sub(r'\s+', ' ', s).strip()
+            description, optA, optB, optC, optD = map(clean,
+                                                      (description, optA, optB, optC, optD))
 
-            # 转换答案字母为索引
-            correct_index = ord(answer.strip().upper()) - ord('A')
+            # 生成唯一问题ID
+            question_id = f"Q_{uuid.uuid4().hex[:8]}"
 
-            quizzes.append(QuizItem(
-                question=question.strip(),
-                options=options,
-                correct_index=correct_index,
-                explanation=explanation.strip()
+            logger.info(f"解析到题目: {description[:30]}...")
+
+            questions.append(QuestionItem(
+                question_id=question_id,
+                speech_id="",
+                description=description,
+                optionA=optA,
+                optionB=optB,
+                optionC=optC,
+                optionD=optD,
+                answer=answer.upper(),
+                isUsed=0
             ))
-        except (IndexError, TypeError, ValueError) as e:
-            # 跳过格式错误的题目
+        except Exception as e:
+            logger.error(f"解析题目时出错: {str(e)}")
             continue
 
-    return quizzes
+    logger.info(f"成功解析 {len(questions)} 道题目")
+    return questions
