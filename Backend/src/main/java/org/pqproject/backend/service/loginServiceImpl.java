@@ -1,5 +1,6 @@
 package org.pqproject.backend.service;
 
+import org.pqproject.backend.pojo.Returnlogin;
 import org.pqproject.backend.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -18,12 +19,36 @@ public class loginServiceImpl implements loginService {
      * @param password The user's password.
      * @return true if the credentials are valid, false otherwise.
      */
-    public boolean validateUser(String email, String password) {
+    public Returnlogin validateUser(String email, String password, int role) {
         User user = userMapper.getUserByEmail(email);
-        if (user != null && user.getPassword().equals(password)) {
-            return true;
+        if (user != null) {
+            if (user.getPassword().equals(password)) {
+                if (user.getRole() != role) {
+                    Returnlogin returnLogin = new Returnlogin();
+                    returnLogin.setUser(user);
+                    returnLogin.setIsOK(0); // Token can be used for session management
+                    returnLogin.setMessage("角色不匹配");
+                    return returnLogin; // 返回角色不匹配的消息
+                }
+                Returnlogin returnLogin = new Returnlogin();
+                returnLogin.setUser(user);
+                returnLogin.setIsOK(1); // Token can be used for session management
+                returnLogin.setMessage("登录成功");
+                return returnLogin; // 返回登录成功的用户信息
+            } else {
+                Returnlogin returnLogin = new Returnlogin();
+                returnLogin.setUser(user);
+                returnLogin.setIsOK(0); // Token can be used for session management
+                returnLogin.setMessage("密码错误");
+                return returnLogin; // 返回密码错误的消息
+            }
         }
-        return false;
+        else {
+            Returnlogin returnLogin = new Returnlogin();
+            returnLogin.setIsOK(0); // Token can be used for session management
+            returnLogin.setMessage("用户不存在");
+            return returnLogin; // 返回用户不存在的消息
+        }
     }
 
     /**

@@ -52,6 +52,8 @@ public class SpeechServiceImpl implements SpeechService {
             return false; // Speech with this ID already exists
         }
         else {
+            String speechId = getUppercaseLetterAndNumber(8);
+            speech.setSpeechId(speechId); // Set a unique speech ID
             speechMapper.addSpeech(speech);
             return true; // Speech added successfully
         }
