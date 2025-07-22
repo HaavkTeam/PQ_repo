@@ -1,5 +1,6 @@
 package org.pqproject.backend.controller;
 
+import org.pqproject.backend.pojo.Returnlogin;
 import org.pqproject.backend.pojo.User;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
@@ -15,15 +16,10 @@ public class loginController {
     private loginService loginService;
 
     @RequestMapping("/login")
-    public String login(@RequestParam(name = "email") String email,
-                        @RequestParam(name = "password") String password) {
-        // This method can be used to handle login requests.
-        // Currently, it is empty and can be expanded as needed.
-        if (loginService.validateUser(email, password)) {
-            return "登录成功"; // Return a success message or redirect to a different page
-        } else {
-            return "登录失败"; // Return an error message or redirect to the login page
-        }
+    public Returnlogin login(@RequestParam(name = "email") String email,
+                             @RequestParam(name = "password") String password,
+                             @RequestParam(name = "role") int role) {
+        return loginService.validateUser(email, password, role);
     }
 
     @RequestMapping("/register")
