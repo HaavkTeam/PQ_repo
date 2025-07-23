@@ -44,6 +44,12 @@ def process_uploaded_file(file: bytes, file_type: str) -> str:
         tmp.write(file)
         tmp_path = tmp.name
 
+    file_type = file_type.lower()
+
+    # 处理文本文件
+    if file_type in ["txt", "text"]:
+        return file.decode("utf-8")
+
     try:
         file_type = file_type.lower()
         if file_type == "pdf":
@@ -56,3 +62,5 @@ def process_uploaded_file(file: bytes, file_type: str) -> str:
             raise ValueError("不支持的文件格式")
     finally:
         os.unlink(tmp_path)
+
+

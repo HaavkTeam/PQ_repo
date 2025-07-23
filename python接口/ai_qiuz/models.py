@@ -1,16 +1,17 @@
 from sqlalchemy import create_engine, Column, String, Integer
 from sqlalchemy.orm import declarative_base, sessionmaker
 from config import settings
+from sqlalchemy import Text
 
 Base = declarative_base()
 
 
 class ContentTable(Base):
     __tablename__ = "filetable"
-    file_id = Column('fileId', String(255), primary_key=True)  # 匹配数据库字段
+    file_id = Column('fileId', String(255), primary_key=True)
     format = Column('format', String(255))
-    content = Column('content', String(255))
-    speech_id = Column('speechId', String(255))
+    content = Column('content', Text)  # 改为Text类型支持长文本
+    speech_id = Column('speechId', String(255), default="")  # 添加默认值
 class QuestionTable(Base):
     __tablename__ = "questiontable"
     question_id = Column('questionId', String(255), primary_key=True)  # 匹配数据库字段

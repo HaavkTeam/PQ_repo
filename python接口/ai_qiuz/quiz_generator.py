@@ -1,4 +1,3 @@
-# quiz_generator.py
 import re
 import requests
 import uuid
@@ -18,6 +17,8 @@ def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[Questi
     2. 格式严格遵循：问题\nA.选项1\nB.选项2\nC.选项3\nD.选项4\n答案：[字母]\n解析：[解释]
     3. 选项要具有迷惑性，正确答案需明确
     4. 题目难度适中，覆盖关键概念
+    5. 每道题以数字编号开头（如"1. "）
+    6. 答案格式请使用简单字母（如"A"）或带方括号的字母（如"[A]"）
     """
 
     headers = {
@@ -36,13 +37,50 @@ def generate_quiz_with_deepseek(content: str, num_questions: int) -> List[Questi
     }
 
     try:
-        logger.info("调用DeepSeek API生成题目...")
-        response = requests.post(settings.DEEPSEEK_API_URL, json=payload, headers=headers)
+        # 确保API URL有效
+        api_url = settings.DEEPSEEK_API_URL
+        if not api_url.startswith("http"):
+            logger.error(f"无效的API URL: {api_url}")
+            return []
+
+        logger.info(f"调用DeepSeek API生成题目，URL: {api_url}")
+        logger.info(f"请求内容长度: {len(content)}")
+
+        response = requests.post(
+            api_url,
+            json=payload,
+            headers=headers,
+            timeout=30  # 设置30秒超时
+        )
+
+        # 记录API响应状态
+        logger.info(f"DeepSeek API响应状态: {response.status_code}")
+
+        # 检查HTTP错误
         response.raise_for_status()
-        logger.info("DeepSeek API调用成功")
-        return parse_quiz_output(response.json()["choices"][0]["message"]["content"])
+
+        # 检查API响应结构
+        response_data = response.json()
+        if "choices" not in response_data or not response_data["choices"]:
+            logger.error("DeepSeek API返回无效响应结构")
+            return []
+
+        generated_text = response_data["choices"][0]["message"]["content"]
+        logger.info(f"API返回内容:\n{generated_text}")
+
+        return parse_quiz_output(generated_text)
+
+    except requests.exceptions.RequestException as e:
+        logger.error(f"API请求失败: {str(e)}")
+        return []
+    except KeyError as e:
+        logger.error(f"API响应缺少必要字段: {str(e)}")
+        return []
+    except ValueError as e:
+        logger.error(f"JSON解析失败: {str(e)}")
+        return []
     except Exception as e:
-        logger.error(f"DeepSeek API调用失败: {str(e)}")
+        logger.exception(f"未知错误: {str(e)}")
         return []
 
 
@@ -51,28 +89,72 @@ def parse_quiz_output(raw_text: str) -> List[QuestionItem]:
     logger.info("解析题目输出...")
     questions = []
 
-    # 改进的正则表达式
-    pattern = r"问题[\d：]*\s*(.*?)\s*A[.:]?\s*(.*?)\s*B[.:]?\s*(.*?)\s*C[.:]?\s*(.*?)\s*D[.:]?\s*(.*?)\s*答案[:：\s]*([A-D])"
+    # 更灵活的分割方法：按题目编号分割
+    question_blocks = re.split(r'\n\s*\d+\.\s+', raw_text)
 
-    matches = re.findall(pattern, raw_text, re.DOTALL)
+    # 第一个块通常是空字符串或说明文字，跳过
+    if question_blocks and not question_blocks[0].strip():
+        question_blocks = question_blocks[1:]
 
-    if not matches:
-        logger.warning(f"无法解析题目，原始输出:\n{raw_text}")
+    if not question_blocks:
+        logger.error("无法分割题目块")
         return questions
 
-    for match in matches:
-        try:
-            description, optA, optB, optC, optD, answer = match
+    logger.info(f"找到 {len(question_blocks)} 个题目块")
 
-            # 清理文本中的多余空格
-            clean = lambda s: re.sub(r'\s+', ' ', s).strip()
-            description, optA, optB, optC, optD = map(clean,
-                                                      (description, optA, optB, optC, optD))
+    for block in question_blocks:
+        try:
+            # 提取问题描述
+            description_match = re.search(r'^(.*?)\nA[\.:]', block, re.DOTALL)
+            if not description_match:
+                # 备用方法：提取到第一个换行符
+                description = block.split('\n')[0].strip()
+                logger.warning(f"使用备用方法提取问题描述: {description[:50]}...")
+            else:
+                description = description_match.group(1).strip()
+
+            # 提取选项
+            options_match = re.search(r'A[\.:](.*?)\nB[\.:](.*?)\nC[\.:](.*?)\nD[\.:](.*?)\n', block, re.DOTALL)
+            if not options_match:
+                # 备用方法：使用更灵活的模式
+                options_pattern = r'[A-D][\.:]([^\n]*)'
+                options = re.findall(options_pattern, block)
+                if len(options) >= 4:
+                    optA, optB, optC, optD = options[:4]
+                    logger.warning(f"使用备用方法提取选项")
+                else:
+                    logger.warning(f"未找到选项: {block[:100]}...")
+                    continue
+            else:
+                optA = options_match.group(1).strip()
+                optB = options_match.group(2).strip()
+                optC = options_match.group(3).strip()
+                optD = options_match.group(4).strip()
+
+            # 提取答案 - 增强灵活性
+            answer_match = re.search(r'答案[:：]\s*\[?([A-D])\]?', block)
+            if not answer_match:
+                # 备用方法：查找答案行
+                answer_line = re.search(r'答案[:：].*', block)
+                if answer_line:
+                    # 从答案行提取字母
+                    answer_letter = re.search(r'[A-D]', answer_line.group(0))
+                    if answer_letter:
+                        answer = answer_letter.group(0)
+                        logger.warning(f"使用备用方法提取答案: {answer}")
+                    else:
+                        logger.warning(f"未找到答案: {block[:100]}...")
+                        continue
+                else:
+                    logger.warning(f"未找到答案行: {block[:100]}...")
+                    continue
+            else:
+                answer = answer_match.group(1).upper()
 
             # 生成唯一问题ID
             question_id = f"Q_{uuid.uuid4().hex[:8]}"
 
-            logger.info(f"解析到题目: {description[:30]}...")
+            logger.info(f"解析到题目: {description[:50]}...")
 
             questions.append(QuestionItem(
                 question_id=question_id,
@@ -82,11 +164,11 @@ def parse_quiz_output(raw_text: str) -> List[QuestionItem]:
                 optionB=optB,
                 optionC=optC,
                 optionD=optD,
-                answer=answer.upper(),
+                answer=answer,
                 isUsed=0
             ))
         except Exception as e:
-            logger.error(f"解析题目时出错: {str(e)}")
+            logger.error(f"解析题目块时出错: {str(e)}")
             continue
 
     logger.info(f"成功解析 {len(questions)} 道题目")
