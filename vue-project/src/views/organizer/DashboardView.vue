@@ -1,5 +1,18 @@
 <template>
   <div class="dashboard-container">
+    <!-- 个人信息卡片 -->
+    <el-card class="info-card">
+      <div class="user-info">
+        <el-avatar :size="64" src="https://placeholder.com/150" />
+        <div class="user-details">
+          <h3>{{ userInfo.username || '未知用户' }}</h3>
+          <p>邮箱：{{ userInfo.email }}</p>
+          <p>身份：组织者</p>
+          <p>组织演讲次数：{{ lectures.length }}</p>
+        </div>
+      </div>
+    </el-card>
+
     <el-card class="dashboard-card">
       <template #header>
         <div class="dashboard-header">
@@ -8,23 +21,34 @@
         </div>
       </template>
 
-      <div class="lecture-list" v-if="lectures.length > 0">
-        <el-table :data="lectures" style="width: 100%">
+      <div class="filter-section">
+        <el-select v-model="filterStatus" placeholder="状态筛选" clearable>
+          <el-option label="进行中" value="1" />
+          <el-option label="已结束" value="0" />
+        </el-select>
+      </div>
+
+      <div class="lecture-list" v-if="filteredLectures.length > 0">
+        <el-table :data="filteredLectures" style="width: 100%" v-loading="loading">
           <el-table-column prop="title" label="演讲标题" />
-          <el-table-column prop="speaker" label="演讲者" />
-          <el-table-column prop="createTime" label="创建时间" />
-          <el-table-column prop="code" label="验证码" width="100" />
+          <el-table-column prop="speakerName" label="演讲者" />
+          <el-table-column prop="startTime" label="开始时间">
+            <template #default="{ row }">
+              {{ formatDate(row.startTime) }}
+            </template>
+          </el-table-column>
+          <el-table-column prop="speechId" label="验证码" width="100" />
           <el-table-column prop="status" label="状态" width="100">
             <template #default="{ row }">
-              <el-tag :type="row.status === 'active' ? 'success' : 'info'">
-                {{ row.status === 'active' ? '进行中' : '已结束' }}
+              <el-tag :type="row.status === 1 ? 'success' : 'info'">
+                {{ row.status === 1 ? '进行中' : '已结束' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="200">
             <template #default="{ row }">
               <el-button
-                v-if="row.status === 'active'"
+                v-if="row.status === 1"
                 type="primary"
                 size="small"
                 @click="enterLecture(row)"
@@ -35,7 +59,7 @@
                 type="danger"
                 size="small"
                 @click="handleEndLecture(row)"
-                :disabled="row.status !== 'active'"
+                :disabled="row.status !== 1"
               >
                 结束演讲
               </el-button>
@@ -66,7 +90,9 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="createDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleCreateLecture">创建</el-button>
+          <el-button type="primary" @click="handleCreateLecture" :loading="creating"
+            >创建</el-button
+          >
         </span>
       </template>
     </el-dialog>
@@ -74,46 +100,41 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useRouter } from 'vue-router'
-
+import type { AxiosError } from 'axios'
+import { getSpeechesByOrganizer, addSpeech, endSpeech } from '@/api/speech'
+import type { ReturnSpeech, Speech } from '@/api/speech'
 const router = useRouter()
 
-// 定义演讲类型接口
-interface Lecture {
-  title: string
-  speaker: string
-  description: string
-  status: 'active' | 'ended'
-  createTime: string
-  code: string
-}
+// 用户信息
+const userInfo = reactive({
+  username: '',
+  email: '',
+  userId: '',
+})
 
-// 演讲列表数据
-const lectures = ref<Lecture[]>([
-  {
-    title: 'Vue.js 高级开发技巧',
-    speaker: '张三',
-    description: 'Vue.js 高级特性和最佳实践分享',
-    status: 'active',
-    createTime: '2024-01-20 14:30',
-    code: 'ABC123',
-  },
-  {
-    title: 'React 状态管理',
-    speaker: '李四',
-    description: 'React 状态管理方案对比',
-    status: 'ended',
-    createTime: '2024-01-19 10:00',
-    code: 'XYZ789',
-  },
-])
+// 状态筛选
+const filterStatus = ref('')
+
+// 演讲列表
+const lectures = ref<ReturnSpeech[]>([])
+
+// 加载状态
+const loading = ref(false)
+const creating = ref(false)
+
+// 筛选后的演讲列表
+const filteredLectures = computed(() => {
+  if (!filterStatus.value) return lectures.value
+  return lectures.value.filter((lecture) => String(lecture.status) === filterStatus.value)
+})
 
 // 创建演讲表单
 const createDialogVisible = ref(false)
 const lectureFormRef = ref()
-const lectureForm = reactive<Omit<Lecture, 'status' | 'createTime' | 'code'>>({
+const lectureForm = reactive({
   title: '',
   speaker: '',
   description: '',
@@ -126,6 +147,37 @@ const rules = {
   description: [{ required: true, message: '请输入演讲描述', trigger: 'blur' }],
 }
 
+// 获取用户信息
+const initUserInfo = () => {
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (storedUserInfo) {
+    const parsedUserInfo = JSON.parse(storedUserInfo)
+    userInfo.username = parsedUserInfo.username
+    userInfo.email = parsedUserInfo.email
+    userInfo.userId = parsedUserInfo.userId
+    // 获取演讲列表
+    fetchLectures()
+  } else {
+    ElMessage.error('用户未登录')
+    // 可以在这里添加重定向到登录页面的逻辑
+  }
+}
+
+// 获取演讲列表
+const fetchLectures = async () => {
+  try {
+    loading.value = true
+    const response = await getSpeechesByOrganizer(userInfo.userId)
+    lectures.value = response.data
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError
+    console.error('获取演讲列表失败：', error)
+    ElMessage.error((axiosError.response?.data as string) || '获取演讲列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
 // 显示创建对话框
 const showCreateDialog = () => {
   createDialogVisible.value = true
@@ -134,62 +186,107 @@ const showCreateDialog = () => {
   lectureForm.description = ''
 }
 
-// 生成随机验证码
-const generateCode = () => {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
-  let code = ''
-  for (let i = 0; i < 6; i++) {
-    code += chars.charAt(Math.floor(Math.random() * chars.length))
-  }
-  return code
-}
-
 // 创建演讲
 const handleCreateLecture = async () => {
   if (!lectureFormRef.value) return
 
-  await lectureFormRef.value.validate((valid: boolean) => {
-    if (valid) {
-      // TODO: 调用后端 API 创建演讲
-      const newLecture: Lecture = {
-        ...lectureForm,
-        status: 'active',
-        createTime: new Date().toLocaleString(),
-        code: generateCode(),
-      }
-      lectures.value.push(newLecture)
-      ElMessage.success('演讲创建成功')
-      createDialogVisible.value = false
-    }
-  })
-}
+  try {
+    const valid = await lectureFormRef.value.validate()
+    if (!valid) return
 
+    creating.value = true
+    const newSpeech: Speech = {
+      speechId: '', // 后端会自动生成
+      title: lectureForm.title,
+      speaker: lectureForm.speaker,
+      description: lectureForm.description,
+      organizer: userInfo.userId,
+      startTime: new Date(),
+      endTime: new Date(),
+      status: 1,
+    }
+
+    const response = await addSpeech(newSpeech)
+    ElMessage.success(response.data)
+    createDialogVisible.value = false
+    // 重新获取演讲列表
+    fetchLectures()
+  } catch (error: unknown) {
+    const axiosError = error as AxiosError
+    ElMessage.error((axiosError.response?.data as string) || '创建演讲失败')
+  } finally {
+    creating.value = false
+  }
+}
 // 结束演讲
-const handleEndLecture = (lecture: Lecture) => {
+const handleEndLecture = (lecture: ReturnSpeech) => {
   ElMessageBox.confirm('确定要结束这场演讲吗？', '警告', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
   })
-    .then(() => {
-      // TODO: 调用后端 API 结束演讲
-      lecture.status = 'ended'
-      ElMessage.success('演讲已结束')
+    .then(async () => {
+      try {
+        const response = await endSpeech(lecture.speechId)
+        ElMessage.success(response.data)
+        // 重新获取演讲列表
+        fetchLectures()
+      } catch (error: unknown) {
+        const axiosError = error as AxiosError
+        ElMessage.error((axiosError.response?.data as string) || '结束演讲失败')
+      }
     })
     .catch(() => {
       // 取消操作
     })
 }
 
-// 进入演讲
-const enterLecture = (lecture: Lecture) => {
-  router.push(`/organizer/lecture?code=${lecture.code}`)
+// 格式化日期
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
 }
+
+// 进入演讲
+const enterLecture = (lecture: ReturnSpeech) => {
+  router.push(`/organizer/lecture?code=${lecture.speechId}`)
+}
+
+// 页面加载时初始化
+onMounted(() => {
+  initUserInfo()
+})
 </script>
 
 <style scoped>
 .dashboard-container {
   padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.info-card {
+  margin-bottom: 20px;
+}
+
+.user-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.user-details h3 {
+  margin: 0 0 10px 0;
+}
+
+.user-details p {
+  margin: 5px 0;
+  color: #666;
 }
 
 .dashboard-card {
@@ -200,6 +297,10 @@ const enterLecture = (lecture: Lecture) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+.filter-section {
+  margin-bottom: 20px;
 }
 
 .lecture-list {
