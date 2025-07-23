@@ -118,4 +118,10 @@ public class SpeechController {
     public List<Spit> getSpitsBySpeechId(@RequestParam String speechId) {
         return speechService.getSpitsBySpeechId(speechId); // Return the list of feedback for the specified speech
     }
+
+    //组织者获取演讲人数
+    @RequestMapping("/getSpeechAudienceCount")
+    public int getSpeechAudienceCount(@RequestParam("speechId") String speechId) {
+        return speechService.getSpeechAudienceCount(speechId); // Return the count of audience members for the speech
+    }
 }

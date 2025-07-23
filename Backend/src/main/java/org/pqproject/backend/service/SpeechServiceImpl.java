@@ -202,6 +202,14 @@ public class SpeechServiceImpl implements SpeechService {
         return returnSpeech; // Transform Speech to ReturnSpeech
     }
 
+    public int getSpeechAudienceCount(String speechId){
+        Speech existingSpeech = speechMapper.getSpeechById(speechId);
+        if (existingSpeech == null) {
+            return 0; // Return 0 if the speech does not exist
+        } else {
+            return speechMapper.getSpeechAudienceCount(speechId); // Retrieve the count of audience members for the given speech ID
+        }
+    }
     public  String getUppercaseLetterAndNumber(Integer length) {
         String uid = "";
         for (Integer i = 0; i < length; i++) {
