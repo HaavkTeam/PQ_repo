@@ -21,14 +21,21 @@ export interface ApiError extends Error {
   }
 }
 
+export interface ReturnLogin {
+  user: User
+  isOK: number
+  message: string
+}
+
 // ... existing code ...
 
 export const login = (data: LoginData) => {
   // 使用 params 发送查询参数，匹配后端的 @RequestParam
-  return api.get('/login', {
+  return api.get<ReturnLogin>('/login', {
     params: {
       email: data.email,
       password: data.password,
+      role: data.role, // 添加 role 参数
     },
   })
 }

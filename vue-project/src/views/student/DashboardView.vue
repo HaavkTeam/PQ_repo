@@ -21,7 +21,7 @@
           <template #header>
             <div class="card-header">
               <h3>最近活动</h3>
-              <el-button type="primary" @click="joinLecture">加入演讲</el-button>
+              <el-button type="primary" @click="joinLecture" :loading="loading">加入演讲</el-button>
             </div>
           </template>
           <el-timeline>
@@ -42,31 +42,24 @@
               <h3>我的演讲记录</h3>
               <el-select v-model="filterStatus" placeholder="状态筛选" class="filter-select">
                 <el-option label="全部" value="" />
-                <el-option label="进行中" value="ongoing" />
-                <el-option label="已完成" value="completed" />
+                <el-option label="进行中" value="1" />
+                <el-option label="已完成" value="2" />
               </el-select>
             </div>
           </template>
-          <el-table :data="filteredLectures" style="width: 100%">
+          <el-table :data="filteredLectures" style="width: 100%" v-loading="loading">
             <el-table-column prop="title" label="演讲标题" />
-            <el-table-column prop="speaker" label="演讲者" />
-            <el-table-column prop="date" label="日期" width="180" />
-            <el-table-column prop="status" label="状态" width="100">
+            <el-table-column prop="speakerName" label="演讲者" />
+            <el-table-column label="日期" width="180">
               <template #default="{ row }">
-                <el-tag :type="row.status === 'ongoing' ? 'success' : 'info'">
-                  {{ row.status === 'ongoing' ? '进行中' : '已完成' }}
-                </el-tag>
+                {{ formatDate(row.startTime) }}
               </template>
             </el-table-column>
-            <el-table-column label="答题情况" width="200">
+            <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
-                <div class="quiz-stats">
-                  <el-progress
-                    :percentage="row.correctRate"
-                    :format="(val: number) => val + '%'"
-                    :status="getProgressStatus(row.correctRate)"
-                  />
-                </div>
+                <el-tag :type="row.status === 1 ? 'success' : 'info'">
+                  {{ row.status === 1 ? '进行中' : '已完成' }}
+                </el-tag>
               </template>
             </el-table-column>
             <el-table-column label="操作" width="120">
@@ -82,45 +75,45 @@
     </el-row>
 
     <el-dialog v-model="joinDialogVisible" title="加入演讲" width="30%">
-      <el-form :model="joinForm">
-        <el-form-item label="演讲代码">
+      <el-form :model="joinForm" :rules="rules" ref="joinFormRef">
+        <el-form-item label="演讲代码" prop="code">
           <el-input v-model="joinForm.code" placeholder="请输入演讲代码" />
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="joinDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleJoinLecture">加入</el-button>
+          <el-button type="primary" @click="handleJoinLecture" :loading="submitting"
+            >加入</el-button
+          >
         </span>
       </template>
     </el-dialog>
 
-    <el-dialog v-model="detailDialogVisible" title="答题详情" width="50%">
+    <el-dialog v-model="detailDialogVisible" title="演讲详情" width="50%">
       <div v-if="selectedLecture">
         <h4>{{ selectedLecture.title }}</h4>
         <el-descriptions border>
-          <el-descriptions-item label="演讲者">{{ selectedLecture.speaker }}</el-descriptions-item>
-          <el-descriptions-item label="日期">{{ selectedLecture.date }}</el-descriptions-item>
-          <el-descriptions-item label="正确率"
-            >{{ selectedLecture.correctRate }}%</el-descriptions-item
-          >
+          <el-descriptions-item label="演讲者">{{
+            selectedLecture.speakerName
+          }}</el-descriptions-item>
+          <el-descriptions-item label="开始时间">{{
+            formatDate(selectedLecture.startTime)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="结束时间">{{
+            formatDate(selectedLecture.endTime)
+          }}</el-descriptions-item>
+          <el-descriptions-item label="状态">{{
+            selectedLecture.status === 1 ? '进行中' : '已完成'
+          }}</el-descriptions-item>
+          <el-descriptions-item label="组织者">{{
+            selectedLecture.organizerName
+          }}</el-descriptions-item>
         </el-descriptions>
 
-        <div class="quiz-details mt-4">
-          <h5>题目详情</h5>
-          <el-table :data="selectedLecture.quizDetails" style="width: 100%">
-            <el-table-column prop="questionNumber" label="题号" width="80" />
-            <el-table-column prop="question" label="题目" show-overflow-tooltip />
-            <el-table-column prop="yourAnswer" label="你的答案" width="120" />
-            <el-table-column prop="correctAnswer" label="正确答案" width="120" />
-            <el-table-column prop="isCorrect" label="结果" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.isCorrect ? 'success' : 'danger'">
-                  {{ row.isCorrect ? '正确' : '错误' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
+        <div class="description mt-4">
+          <h5>演讲描述</h5>
+          <p>{{ selectedLecture.description }}</p>
         </div>
       </div>
     </el-dialog>
@@ -128,137 +121,156 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { ElMessage } from 'element-plus'
+import { getMySpeeches, joinSpeech, type ReturnSpeech } from '@/api/speech'
+import type { ApiError } from '@/api/auth'
+import type { FormInstance } from 'element-plus'
 
 const router = useRouter()
+const loading = ref(false)
+const submitting = ref(false)
 
+// 用户信息
 const userInfo = reactive({
-  username: '张三',
+  username: '',
   avatar: '',
-  lectureCount: 10,
-  quizCount: 25,
-  averageScore: 85,
+  lectureCount: 0,
+  quizCount: 0,
+  averageScore: 0,
 })
-
-const activities = ref([
-  {
-    id: 1,
-    content: '参加了《Vue.js进阶开发》演讲',
-    time: '2024-01-20 14:00',
-    type: 'primary',
-  },
-  {
-    id: 2,
-    content: '完成测验《组件化开发基础》，得分90分',
-    time: '2024-01-20 14:30',
-    type: 'success',
-  },
-])
-
-interface Lecture {
-  id: number
-  title: string
-  speaker: string
-  date: string
-  status: 'ongoing' | 'completed'
-  correctRate: number
-  quizDetails: {
-    questionNumber: number
-    question: string
-    yourAnswer: string
-    correctAnswer: string
-    isCorrect: boolean
-  }[]
+// 活动类型定义
+interface Activity {
+  id: string
+  time: string
+  type: 'primary' | 'success' | 'warning' | 'danger' | 'info'
+  content: string
 }
 
-const lectures = ref<Lecture[]>([
-  {
-    id: 1,
-    title: 'Vue.js进阶开发',
-    speaker: '李老师',
-    date: '2024-01-20',
-    status: 'completed',
-    correctRate: 90,
-    quizDetails: [
-      {
-        questionNumber: 1,
-        question: '什么是Vue的响应式原理？',
-        yourAnswer: 'Proxy代理',
-        correctAnswer: 'Proxy代理',
-        isCorrect: true,
-      },
-      {
-        questionNumber: 2,
-        question: '组件通信的方式有哪些？',
-        yourAnswer: 'props, emit',
-        correctAnswer: 'props, emit, provide/inject',
-        isCorrect: false,
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: '组件化开发基础',
-    speaker: '王老师',
-    date: '2024-01-19',
-    status: 'completed',
-    correctRate: 85,
-    quizDetails: [
-      {
-        questionNumber: 1,
-        question: '什么是组件？',
-        yourAnswer: '可复用的代码片段',
-        correctAnswer: '可复用的代码片段',
-        isCorrect: true,
-      },
-    ],
-  },
-  {
-    id: 3,
-    title: 'TypeScript实战',
-    speaker: '张老师',
-    date: '2024-01-21',
-    status: 'ongoing',
-    correctRate: 0,
-    quizDetails: [],
-  },
-])
+// 在 onMounted 中获取用户信息
+onMounted(() => {
+  // 从 localStorage 获取用户信息
+  const storedUserInfo = localStorage.getItem('userInfo')
+  if (!storedUserInfo) {
+    ElMessage.error('用户未登录')
+    router.push('/auth/login')
+    return
+  }
+  const parsedUserInfo = JSON.parse(storedUserInfo)
+  userInfo.username = parsedUserInfo.username || '未知用户'
+  userInfo.avatar = parsedUserInfo.avatar || ''
+  fetchLectures()
+})
+// 活动列表
+const activities = ref<Activity[]>([])
 
+// 演讲列表
+const lectures = ref<ReturnSpeech[]>([])
+
+// 状态筛选
 const filterStatus = ref('')
 const filteredLectures = computed(() => {
   if (!filterStatus.value) return lectures.value
-  return lectures.value.filter((lecture) => lecture.status === filterStatus.value)
+  return lectures.value.filter((lecture) => String(lecture.status) === filterStatus.value)
 })
 
+// 对话框控制
 const joinDialogVisible = ref(false)
 const detailDialogVisible = ref(false)
-const selectedLecture = ref<Lecture | null>(null)
+const selectedLecture = ref<ReturnSpeech | null>(null)
 
+// 表单相关
+const joinFormRef = ref<FormInstance>()
 const joinForm = reactive({
   code: '',
 })
+const rules = {
+  code: [{ required: true, message: '请输入演讲代码', trigger: 'blur' }],
+}
 
+// 加入演讲
 const joinLecture = () => {
   joinDialogVisible.value = true
 }
 
-const handleJoinLecture = () => {
-  // TODO: 实现加入演讲逻辑
-  router.push(`/student/quiz?code=${joinForm.code}`)
-  joinDialogVisible.value = false
+// 修改错误处理部分
+const handleJoinLecture = async () => {
+  if (!joinFormRef.value) return
+
+  await joinFormRef.value.validate(async (valid) => {
+    if (valid) {
+      submitting.value = true
+      try {
+        const storedUserInfo = localStorage.getItem('userInfo')
+        const userId = storedUserInfo ? JSON.parse(storedUserInfo).userId : ''
+        if (!userId) {
+          throw new Error('用户未登录')
+        }
+        const response = await joinSpeech(joinForm.code, userId)
+        if (response.data === '用户已加入演讲') {
+          ElMessage.success('成功加入演讲')
+          router.push(`/student/quiz?code=${joinForm.code}`)
+          joinDialogVisible.value = false
+        } else {
+          ElMessage.error(response.data)
+        }
+      } catch (error) {
+        const err = error as ApiError
+        console.error('加入演讲失败：', err)
+        ElMessage.error(err.response?.data || err.message || '加入演讲失败')
+      } finally {
+        submitting.value = false
+      }
+    }
+  })
 }
 
-const getProgressStatus = (rate: number) => {
-  if (rate >= 90) return 'success'
-  if (rate >= 60) return 'warning'
-  return 'exception'
-}
-
-const viewLectureDetail = (lecture: Lecture) => {
+// 查看演讲详情
+const viewLectureDetail = (lecture: ReturnSpeech) => {
   selectedLecture.value = lecture
   detailDialogVisible.value = true
 }
+
+// 格式化日期
+const formatDate = (date: Date) => {
+  if (!date) return ''
+  return new Date(date).toLocaleString()
+}
+
+// 获取演讲列表
+// 修改 fetchLectures 函数中的 userId 获取方式
+const fetchLectures = async () => {
+  loading.value = true
+  try {
+    const storedUserInfo = localStorage.getItem('userInfo')
+    if (!storedUserInfo) {
+      throw new Error('用户未登录')
+    }
+    const parsedUserInfo = JSON.parse(storedUserInfo)
+    const userId = parsedUserInfo.userId
+    if (!userId) {
+      throw new Error('用户信息不完整')
+    }
+    const response = await getMySpeeches(userId)
+    lectures.value = response.data
+    userInfo.lectureCount = lectures.value.length
+  } catch (error) {
+    const err = error as ApiError
+    console.error('获取演讲列表失败：', err)
+    ElMessage.error(err.response?.data || err.message || '获取演讲列表失败')
+    if (err.message === '用户未登录') {
+      router.push('/auth/login')
+    }
+  } finally {
+    loading.value = false
+  }
+}
+
+// 组件挂载时获取数据
+onMounted(() => {
+  fetchLectures()
+})
 </script>
 
 <style scoped>
@@ -294,15 +306,11 @@ const viewLectureDetail = (lecture: Lecture) => {
   width: 120px;
 }
 
-.quiz-stats {
-  padding: 0 10px;
-}
-
-.quiz-details {
+.description {
   margin-top: 20px;
 }
 
-.quiz-details h5 {
-  margin-bottom: 16px;
+.description h5 {
+  margin-bottom: 12px;
 }
 </style>

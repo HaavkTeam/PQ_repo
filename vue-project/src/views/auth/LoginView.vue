@@ -91,25 +91,42 @@ const handleLogin = async () => {
     const response = await login({
       email: loginForm.email,
       password: loginForm.password,
-      role: roleMap[loginForm.role as keyof typeof roleMap], // 添加角色参数，使用 roleMap 转换
+      role: roleMap[loginForm.role as keyof typeof roleMap],
     })
 
-    if (response.data === '登录成功') {
-      ElMessage.success('登录成功')
-      // 根据不同角色跳转到不同的页面
-      switch (loginForm.role) {
-        case 'student':
-          router.push('/student/dashboard')
-          break
-        case 'teacher':
-          router.push('/teacher/dashboard')
-          break
-        case 'organizer':
-          router.push('/organizer/dashboard')
-          break
+    // 添加调试信息
+    console.log('登录响应：', response)
+
+    // 修改判断条件，根据实际后端返回的数据格式
+    if (response.status === 200 && response.data) {
+      if (response.data.isOK === 1) {
+        // 假设 isOK === 1 表示登录成功
+        // 保存用户信息到 localStorage
+        const userInfo = {
+          userId: response.data.user.userId,
+          username: response.data.user.username,
+          email: response.data.user.email,
+          role: loginForm.role,
+        }
+        localStorage.setItem('userInfo', JSON.stringify(userInfo))
+        ElMessage.success('登录成功')
+        // 根据不同角色跳转到不同的页面
+        switch (loginForm.role) {
+          case 'student':
+            await router.push('/student/dashboard')
+            break
+          case 'teacher':
+            await router.push('/teacher/dashboard')
+            break
+          case 'organizer':
+            await router.push('/organizer/dashboard')
+            break
+        }
+      } else {
+        ElMessage.error(`登录失败：${response.data.message}`)
       }
     } else {
-      ElMessage.error('登录失败：用户名或密码错误')
+      ElMessage.error('登录失败：服务器响应异常')
     }
   } catch (error: unknown) {
     // 处理表单验证错误和网络请求错误
