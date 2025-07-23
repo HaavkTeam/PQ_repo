@@ -71,4 +71,6 @@ public interface SpeechService {
     List<Spit> getSpitsBySpeechId(String speechId);
 
     List<String> getAudienceBySpeechId(String speechId);
+
+    int getSpeechAudienceCount(String speechId);
 }

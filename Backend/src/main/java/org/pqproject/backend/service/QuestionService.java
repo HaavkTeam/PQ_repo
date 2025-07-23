@@ -1,9 +1,9 @@
 package org.pqproject.backend.service;
 
-import org.pqproject.backend.pojo.Question;
-import org.pqproject.backend.pojo.ReturnSubmit;
-import org.pqproject.backend.pojo.UserSubmit;
+import org.pqproject.backend.pojo.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.util.List;
 
 public interface QuestionService {
@@ -16,9 +16,23 @@ public interface QuestionService {
      */
     List<Question> getQuestionsById(String speechId);
 
-    List<Question> launchQuestion(String speechId);
+    List<Question> getUnusedQuestion(String speechId);
 
     boolean submitAnswer(UserSubmit submitAnswer);
 
     List<ReturnSubmit> getMySubmit(String userId, String speechId);
+
+
+    void uploadQuestionFile(MultipartFile file, String speechId) throws IOException, InterruptedException;
+
+    boolean publishQuestion(List<String> questionList, String speechId);
+
+    List<test> getTestList(String speechId);
+
+    List<Question> getQuestionsByTestId(String testId);
+
+    MyData getMyData(String userId, String speechId);
+
+    List<UserAnswerData> getUserData(String testId);
+
 }

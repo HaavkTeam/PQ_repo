@@ -56,4 +56,7 @@ public interface SpeechMapper {
 
     @Select("SELECT userId FROM surelation WHERE speechId = #{speechId}")
     List<String> getUsersBySpeechId(String speechId);
+
+    @Select("SELECT COUNT(*) FROM surelation WHERE speechId = #{speechId}")
+    int getSpeechAudienceCount(String speechId);
 }
