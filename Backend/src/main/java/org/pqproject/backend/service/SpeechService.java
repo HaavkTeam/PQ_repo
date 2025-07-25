@@ -1,9 +1,6 @@
 package org.pqproject.backend.service;
 
-import org.pqproject.backend.pojo.Question;
-import org.pqproject.backend.pojo.ReturnSpeech;
-import org.pqproject.backend.pojo.Speech;
-import org.pqproject.backend.pojo.Spit;
+import org.pqproject.backend.pojo.*;
 
 import java.util.Date;
 import java.util.List;
@@ -73,4 +70,7 @@ public interface SpeechService {
     List<String> getAudienceBySpeechId(String speechId);
 
     int getSpeechAudienceCount(String speechId);
+
+
+    OrganizerData getSpeechData(String speechId);
 }

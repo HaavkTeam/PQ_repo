@@ -19,6 +19,9 @@ public class QuestionServiceImpl implements QuestionService {
     @Autowired
     private QuestionMapper questionMapper;
 
+
+
+
     @Override
     public List<Question> getQuestionsById(String speechId) {
         return questionMapper.getQuestionBySpeechId(speechId);
@@ -224,6 +227,54 @@ public class QuestionServiceImpl implements QuestionService {
         }
         return userAnswerDataList;
     }
+
+    public List<UserAnswerData> getUserData2(String speechId){
+        List<UserAnswerData> userAnswerDataList = new ArrayList<>();
+        List<Question> questions = questionMapper.getQuestionBySpeechId(speechId);
+
+        // Collect unique user IDs
+        for (Question question : questions) {
+            List<UserSubmit> userSubmits = questionMapper.getUserSubmitsByQuestionId(question.getQuestionId());
+            int aNumber = 0;
+            int bNumber = 0;
+            int cNumber = 0;
+            int dNumber = 0;
+            int AnswerNumber = 0;
+            int correctNumber = 0;
+            for (UserSubmit userSubmit : userSubmits) {
+                AnswerNumber++;
+                switch (userSubmit.getSelection()) {
+                    case "A":
+                        aNumber++;
+                        break;
+                    case "B":
+                        bNumber++;
+                        break;
+                    case "C":
+                        cNumber++;
+                        break;
+                    case "D":
+                        dNumber++;
+                        break;
+                }
+                if (userSubmit.getIsCorrect() == 1) {
+                    correctNumber++;
+                }
+            }
+            int correctPercentage = AnswerNumber==0 ? 0 : (correctNumber * 100) / AnswerNumber;
+            UserAnswerData userAnswerData = new UserAnswerData(question.getQuestionId(), question.getDescription(),
+                    question.getOptionA(), question.getOptionB(), question.getOptionC(), question.getOptionD(),
+                    question.getAnswer(), aNumber, bNumber, cNumber, dNumber, AnswerNumber, correctPercentage+ "%");
+            userAnswerDataList.add(userAnswerData);
+        }
+        return userAnswerDataList;
+    }
+
+
+   public boolean changeTestStatus(String testId){
+        questionMapper.changeTestStatus(testId);
+        return true;
+   }
 
     public  String getUppercaseLetterAndNumber(Integer length) {
         String uid = "";

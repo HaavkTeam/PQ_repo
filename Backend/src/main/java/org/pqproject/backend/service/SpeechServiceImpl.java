@@ -1,9 +1,6 @@
 package org.pqproject.backend.service;
 
-import org.pqproject.backend.pojo.ReturnSpeech;
-import org.pqproject.backend.pojo.Speech;
-import org.pqproject.backend.pojo.Spit;
-import org.pqproject.backend.pojo.User;
+import org.pqproject.backend.pojo.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.pqproject.backend.mapper.SpeechMapper;
 import org.pqproject.backend.mapper.userMapper;
@@ -20,6 +17,9 @@ public class SpeechServiceImpl implements SpeechService {
 
     @Autowired
     private userMapper userMapper;
+
+    @Autowired
+    private QuestionService questionService;
 
     public ReturnSpeech getSpeechById(String speechId){
         Speech speech = speechMapper.getSpeechById(speechId);
@@ -89,10 +89,18 @@ public class SpeechServiceImpl implements SpeechService {
 
     public boolean joinSpeech(String speechId, String userId) {
         Speech existingSpeech = speechMapper.getSpeechById(speechId);
+        List<String> audienceIds = speechMapper.getSpeechUsers(speechId);
+        int isUserJoined = 0;
+        for (String audience : audienceIds) {
+            if (audience.equals(userId)) {
+                isUserJoined = 1;
+            }
+        }
         if (existingSpeech == null) {
             return false; // Speech with this ID does not exist
         } else {
-            speechMapper.joinSpeech(speechId, userId);
+            if (isUserJoined == 0){
+            speechMapper.joinSpeech(speechId, userId);}
             return true; // User joined the speech successfully
         }
     }
@@ -228,5 +236,29 @@ public class SpeechServiceImpl implements SpeechService {
             uid = uid.concat(randChar);
         }
         return uid;
+    }
+
+    public OrganizerData getSpeechData(String speechId) {
+        List<UserAnswerData> userAnswerDataList = questionService.getUserData2(speechId);
+        int AudienceCount = getSpeechAudienceCount(speechId);
+        int questionCount = userAnswerDataList.size();
+        int totalCorrect = 0;
+        double totalCorrectRate = 0;
+        int number=0;
+        for (UserAnswerData userAnswerData : userAnswerDataList)
+        {
+            number++;
+            String CorrectPercentage = userAnswerData.getCorrectPercentage();
+            int correctPercentage = Integer.parseInt(CorrectPercentage.replace("%", ""));
+            totalCorrect = totalCorrect + correctPercentage;
+            totalCorrectRate = totalCorrect/number;
+        }
+        String averageAccuracy = String.format("%.2f", totalCorrectRate) + "%";
+        OrganizerData organizerData = new OrganizerData();
+        organizerData.setAverageAccuracy(averageAccuracy);
+        organizerData.setUserAnswers(userAnswerDataList);
+        organizerData.setAudienceCount(AudienceCount);
+        organizerData.setQuestionNumber(questionCount);
+        return organizerData;
     }
 }

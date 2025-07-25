@@ -55,4 +55,6 @@ public interface QuestionMapper {
     @Select("SELECT questionId FROM tqrelation WHERE testId = #{testId}")
     List<String> getQuestionsByTestId(String testId);
 
+    @Update("UPDATE tsrelation SET state = 1 WHERE testId = #{testId}")
+    void changeTestStatus(String testId);
 }

@@ -38,6 +38,9 @@ public interface SpeechMapper {
     @Insert("INSERT INTO surelation (speechId, userId) VALUES (#{speechId}, #{userId})")
     void joinSpeech(String speechId, String userId);
 
+    @Select("SELECT userId FROM surelation WHERE speechId = #{speechId}")
+    List<String> getSpeechUsers(String speechId);
+
     //获取用户参与的演讲
     @Select("SELECT speechId FROM surelation WHERE userId = #{userId}")
     List<String> getMySpeeches(String userId);

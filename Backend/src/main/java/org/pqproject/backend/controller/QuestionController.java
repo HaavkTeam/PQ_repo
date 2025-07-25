@@ -87,6 +87,15 @@ public class QuestionController {
         return questionService.getUserData(testId); // Return the list of user answer data
     }
 
+    //改变测试状态
+    @RequestMapping("/changeTestStatus")
+    public String changeTestStatus(@RequestParam("testId") String testId) {
+        if (questionService.changeTestStatus(testId)) {
+            return "测试状态已改变"; // Return a success message
+        } else {
+            return "测试状态改变失败"; // Return an error message
+        }
+    }
 
 
 

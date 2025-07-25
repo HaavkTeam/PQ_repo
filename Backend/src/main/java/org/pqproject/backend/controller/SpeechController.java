@@ -1,8 +1,7 @@
 package org.pqproject.backend.controller;
 
-import org.pqproject.backend.pojo.ReturnSpeech;
-import org.pqproject.backend.pojo.Speech;
-import org.pqproject.backend.pojo.Spit;
+import org.pqproject.backend.pojo.*;
+import org.pqproject.backend.service.QuestionService;
 import org.pqproject.backend.service.SpeechService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -106,6 +105,7 @@ public class SpeechController {
     //听众吐槽演讲情况
     @RequestMapping("/SpikeSpeech")
     public String SpikeSpeech(@RequestBody Spit spit) {
+        System.out.println(spit.toString());
         if (speechService.spikeSpeech(spit)) {
             return "演讲吐槽成功"; // Return a success message indicating the feedback was successful
         } else {
@@ -124,4 +124,13 @@ public class SpeechController {
     public int getSpeechAudienceCount(@RequestParam("speechId") String speechId) {
         return speechService.getSpeechAudienceCount(speechId); // Return the count of audience members for the speech
     }
+
+
+    //组织者获取演讲数据
+    @RequestMapping("/getSpeechData")
+    public OrganizerData getSpeechData(@RequestParam("speechId") String speechId) {
+        System.out.println("组织者获取演讲数据...................................................");
+        return speechService.getSpeechData(speechId); // Return the data for the specified speech
+    }
+
 }

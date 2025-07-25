@@ -27,6 +27,8 @@ public class CommentServiceImpl implements CommentService {
         try {
             String commentId = getUppercaseLetterAndNumber(8); // 生成一个8位的随机评论ID
             comment.setCommentId(commentId); // 设置评论ID
+            if (comment.getReplyId() == null)
+                comment.setReplyId("0"); // 设置回复者ID为0
             commentMapper.addComment(comment);
             return true; // 添加成功
         } catch (Exception e) {
