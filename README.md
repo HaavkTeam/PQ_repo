@@ -1,5 +1,3 @@
-以下是完整的 Markdown 源文件内容（可直接保存为 `README.md` 并编辑）：
-
 # Popquiz项目介绍
 
 ## 项目详情
@@ -44,6 +42,7 @@ spring.datasource.password=[密码]
 ### 3.启动后端服务
 运行 Backend/src/main/java/org/pqproject/backend/BackendApplication.java
 
+## 项目结构
 ## 后端项目结构
 ```plaintext
 Backend/
