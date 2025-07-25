@@ -1,5 +1,5 @@
 import api from './config'
-
+import type { UserAnswerData } from './question'
 export interface Speech {
   speechId: string
   title: string
@@ -16,13 +16,25 @@ export interface ReturnSpeech extends Speech {
   speakerName: string
 }
 
-export interface Spit {
-  speechId: string
-  userId: string
-  content: string
-  time?: Date
+// 组织者数据接口
+export interface OrganizerData {
+  userAnswers: UserAnswerData[]
+  audienceCount: number
+  averageAccuracy: string
+  questionNumber: number
 }
 
+// 获取组织者演讲数据
+export const getSpeechData = (speechId: string) => {
+  return api.get<OrganizerData>('/speech/getSpeechData', { params: { speechId } })
+}
+
+export interface Spit {
+  SpitId?: string
+  speechId: string
+  content: string
+  time?: Date // 改回 Date 类型
+}
 // 获取所有演讲
 export const getAllSpeeches = () => {
   return api.get<ReturnSpeech[]>('/speech/getAllSpeeches')
@@ -67,12 +79,27 @@ export const getAudienceBySpeechId = (speechId: string) => {
   return api.get<string[]>('/speech/getAudienceBySpeechId', { params: { speechId } })
 }
 
-// 吐槽演讲
 export const spikeSpeech = (spit: Spit) => {
-  return api.post<string>('/speech/SpikeSpeech', spit)
+  return api.post<string>(
+    '/speech/SpikeSpeech',
+    {
+      SpitId: spit.SpitId || crypto.randomUUID(), // 保持大写 S
+      speechId: spit.speechId, // 改为小写 s
+      content: spit.content, // 改为小写 c
+      time: spit.time || new Date(), // 改为小写 t
+    },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+  )
 }
-
 // 获取演讲的所有吐槽
 export const getSpitsBySpeechId = (speechId: string) => {
   return api.get<Spit[]>('/speech/getSpitsBySpeechId', { params: { speechId } })
+}
+// 获取演讲的听众数量
+export const getSpeechAudienceCount = (speechId: string) => {
+  return api.get<number>('/speech/getSpeechAudienceCount', { params: { speechId } })
 }

@@ -65,7 +65,7 @@
             <el-table-column label="操作" width="120">
               <template #default="{ row }">
                 <el-button link type="primary" @click="viewLectureDetail(row)">
-                  查看详情
+                  进入演讲
                 </el-button>
               </template>
             </el-table-column>
@@ -210,7 +210,11 @@ const handleJoinLecture = async () => {
         const response = await joinSpeech(joinForm.code, userId)
         if (response.data === '用户已加入演讲') {
           ElMessage.success('成功加入演讲')
-          router.push(`/student/quiz?code=${joinForm.code}`)
+          // 修改这里：从直接跳转到quiz改为跳转到tests
+          router.push({
+            path: '/student/tests',
+            query: { code: joinForm.code },
+          })
           joinDialogVisible.value = false
         } else {
           ElMessage.error(response.data)
@@ -228,8 +232,16 @@ const handleJoinLecture = async () => {
 
 // 查看演讲详情
 const viewLectureDetail = (lecture: ReturnSpeech) => {
-  selectedLecture.value = lecture
-  detailDialogVisible.value = true
+  if (lecture.status === 1) {
+    // 如果演讲正在进行中
+    router.push({
+      path: '/student/tests', // 修改为测试列表页面
+      query: { code: lecture.speechId },
+    })
+  } else {
+    selectedLecture.value = lecture
+    detailDialogVisible.value = true
+  }
 }
 
 // 格式化日期
