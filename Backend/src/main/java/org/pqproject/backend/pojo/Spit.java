@@ -1,10 +1,12 @@
 package org.pqproject.backend.pojo;
 
+import java.util.Date;
+
 public class Spit {
     private String SpitId;
     private String speechId;
     private String content;
-    private String time;
+    private Date time;
 
     public String getSpitId() {
         return SpitId;
@@ -30,11 +32,15 @@ public class Spit {
         this.content = content;
     }
 
-    public String getTime() {
+    public Date getTime() {
         return time;
     }
 
-    public void setTime(String time) {
+    public void setTime(Date time) {
         this.time = time;
+    }
+
+    public String toString() {
+        return "Spit [SpitId=" + SpitId + ", speechId=" + speechId + ", content=" + content + ", time=" + time + "]";
     }
 }

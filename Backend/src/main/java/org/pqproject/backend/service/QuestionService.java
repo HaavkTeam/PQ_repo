@@ -35,4 +35,8 @@ public interface QuestionService {
 
     List<UserAnswerData> getUserData(String testId);
 
+    boolean changeTestStatus(String testId);
+
+    List<UserAnswerData> getUserData2(String speechId);
+
 }
