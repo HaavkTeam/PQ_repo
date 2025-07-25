@@ -1,0 +1,12 @@
+# requirements.txt
+fastapi
+uvicorn
+python-multipart  # 文件上传支持
+sqlalchemy
+pymysql  # MySQL数据库驱动
+requests  # 调用DeepSeek API
+python-dotenv  # 环境变量管理
+pdfplumber  # PDF文本提取
+python-pptx  # PPTX文件处理
+SpeechRecognition  # 音频转文本
+pydantic  # 数据验证
