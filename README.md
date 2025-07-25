@@ -14,7 +14,9 @@
 - Maven 3.6.3
 - MySQL 8.3
 - IDE：IntelliJ IDEA
-
+- NODEJS：v22.17.0
+- npm：10.9.2
+- vue：@vue/cli 5.0.8
 ## 安装与部署
 
 ### 1.克隆项目
@@ -41,6 +43,9 @@ spring.datasource.password=[密码]
 
 ### 3.启动后端服务
 运行 Backend/src/main/java/org/pqproject/backend/BackendApplication.java
+
+### 4.启动前端服务
+使用终端，在前端项目下输入npm run dev，然后输入o就会跳出页面
 
 ## 项目结构
 ### 后端项目结构
@@ -72,7 +77,67 @@ Backend/
 ├── External Libraries    # IDE 显示的外部依赖库（非实际项目文件，是引用的 Jar 包集合 ）
 └── Scratches and Consoles # IDEA 的临时代码片段、控制台记录等（开发临时使用 ）
 ```
-
+### 前端项目结构
+```plaintext
+├── .editorconfig          # 编辑器配置
+├── .gitattributes         # Git属性配置
+├── .gitignore             # Git忽略文件配置
+├── .prettierrc.json       # Prettier代码格式化配置
+├── .vscode/               # VS Code编辑器配置
+├── README.md              # 项目说明文档
+├── e2e/                   # 端到端测试目录
+├── env.d.ts               # 环境变量类型声明
+├── eslint.config.ts       # ESLint配置
+├── index.html             # 入口HTML文件
+├── package.json           # 项目依赖和脚本配置
+├── playwright.config.ts   # Playwright测试配置
+├── public/                # 静态资源目录
+├── src/                   # 源代码目录
+├── tsconfig*.json         # TypeScript配置文件
+└── vite.config.ts         # Vite构建工具配置
+├── App.vue                # 应用根组件
+├── api/                   # API接口目录
+│   ├── auth.ts            # 认证相关API
+│   ├── comment.ts         # 评论相关API
+│   ├── config.ts          # API配置
+│   ├── question.ts        # 问题相关API
+│   └── speech.ts          # 演讲相关API
+├── assets/                # 静态资源
+│   ├── base.css           # 基础样式
+│   ├── logo.svg           # Logo图片
+│   └── main.css           # 主样式文件
+├── components/            # 公共组件
+│   ├── HelloWorld.vue     # 示例组件
+│   ├── TheWelcome.vue     # 欢迎组件
+│   ├── WelcomeItem.vue    # 欢迎项组件
+│   ├── __tests__/         # 组件测试
+│   └── icons/             # 图标组件
+├── main.ts                # 应用入口文件
+├── router/                # 路由配置
+│   └── index.ts           # 路由定义
+├── stores/                # 状态管理
+│   └── counter.ts         # 计数器状态示例
+└── views/                 # 视图组件
+    ├── AboutView.vue      # 关于页面
+    ├── HomeView.vue       # 首页
+    ├── auth/              # 认证相关页面
+    ├── organizer/         # 组织者相关页面
+    ├── student/           # 学生相关页面
+    └── teacher/           # 教师相关页面
+├── auth/                  # 认证相关页面
+│   ├── LoginView.vue      # 登录页面
+│   └── RegisterView.vue   # 注册页面
+├── organizer/             # 组织者相关页面
+│   ├── DashboardView.vue  # 组织者仪表盘
+│   └── LectureView.vue    # 组织者演讲页面
+├── student/               # 学生相关页面
+│   ├── DashboardView.vue  # 学生仪表盘
+│   ├── QuizView.vue       # 学生测验页面
+│   └── TestListView.vue   # 学生测试列表页面
+└── teacher/               # 教师相关页面
+    ├── DashboardView.vue  # 教师仪表盘
+    └── LectureView.vue    # 教师演讲页面
+```
 ## 贡献指南
 
 1. **Fork 本仓库**  
