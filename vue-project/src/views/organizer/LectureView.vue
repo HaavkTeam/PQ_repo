@@ -1,40 +1,37 @@
 <template>
   <div class="lecture-container">
     <el-row :gutter="20">
-      <!-- 左侧区域：实时数据展示 -->
+      <!-- 左侧区域：演讲信息和统计数据 -->
       <el-col :span="16">
         <!-- 演讲信息卡片 -->
         <el-card class="speech-info-card">
           <template #header>
             <div class="card-header">
               <h3>演讲信息</h3>
+              <el-button type="primary" size="small" @click="refreshData">刷新数据</el-button>
             </div>
           </template>
 
           <div class="speech-info">
-            <el-descriptions :column="2" border>
-              <el-descriptions-item label="演讲标题">{{ speech.title }}</el-descriptions-item>
-              <el-descriptions-item label="演讲者">{{ speech.speakerName }}</el-descriptions-item>
-              <el-descriptions-item label="开始时间">{{
-                formatDate(speech.startTime)
-              }}</el-descriptions-item>
-              <el-descriptions-item label="状态">
-                <el-tag :type="speech.status === 1 ? 'success' : 'info'">
-                  {{ speech.status === 1 ? '进行中' : '已结束' }}
-                </el-tag>
-              </el-descriptions-item>
-              <el-descriptions-item label="演讲简介" :span="2">
-                {{ speech.description }}
-              </el-descriptions-item>
-            </el-descriptions>
+            <p><strong>标题：</strong>{{ speech.title }}</p>
+            <p><strong>描述：</strong>{{ speech.description }}</p>
+            <p><strong>演讲者：</strong>{{ speech.speakerName }}</p>
+            <p><strong>开始时间：</strong>{{ formatDate(speech.startTime) }}</p>
+
+            <p>
+              <strong>状态：</strong>
+              <el-tag :type="speech.status === 1 ? 'success' : 'info'">{{
+                speech.status === 1 ? '进行中' : '已结束'
+              }}</el-tag>
+            </p>
           </div>
         </el-card>
 
+        <!-- 统计数据卡片 -->
         <el-card class="statistics-card">
           <template #header>
             <div class="card-header">
               <h3>实时数据</h3>
-              <el-button type="primary" size="small" @click="refreshData">刷新</el-button>
             </div>
           </template>
 
@@ -65,40 +62,20 @@
           <!-- 答题分布图表 -->
           <div class="chart-section">
             <h4>答题分布</h4>
-            <div class="chart-container">
-              <!-- 这里后续集成echarts图表 -->
-              <div class="chart-placeholder">答题分布图表</div>
+            <div v-if="answerDistributionData.length === 0" class="chart-placeholder">
+              暂无答题数据
+            </div>
+            <div v-else class="answer-distribution">
+              <div
+                v-for="item in answerDistributionData"
+                :key="item.questionId"
+                class="question-stats"
+              >
+                <div class="question-title">{{ item.description }}</div>
+                <div class="correct-rate">正确率: {{ item.correctPercentage }}</div>
+              </div>
             </div>
           </div>
-        </el-card>
-
-        <!-- 题目列表 -->
-        <el-card class="questions-card">
-          <template #header>
-            <div class="card-header">
-              <h3>题目列表</h3>
-            </div>
-          </template>
-
-          <el-table :data="questions" style="width: 100%">
-            <el-table-column label="序号" type="index" width="80" />
-            <el-table-column prop="description" label="题目内容" />
-            <el-table-column label="选项" width="200">
-              <template #default="{ row }">
-                <div>A: {{ row.optionA }}</div>
-                <div>B: {{ row.optionB }}</div>
-                <div>C: {{ row.optionC }}</div>
-                <div>D: {{ row.optionD }}</div>
-              </template>
-            </el-table-column>
-            <el-table-column label="状态" width="100">
-              <template #default="{ row }">
-                <el-tag :type="row.isUsed ? 'info' : 'success'">
-                  {{ row.isUsed ? '已使用' : '未使用' }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
         </el-card>
       </el-col>
 
@@ -128,70 +105,47 @@
             </el-timeline>
           </div>
         </el-card>
-
-        <!-- 评论列表 -->
-        <el-card class="comments-card">
-          <template #header>
-            <div class="card-header">
-              <h3>题目评论</h3>
-              <el-button type="primary" size="small" @click="refreshComments">刷新</el-button>
-            </div>
-          </template>
-
-          <div class="comments-list">
-            <el-timeline>
-              <el-timeline-item
-                v-for="comment in comments"
-                :key="comment.commentId"
-                :timestamp="formatDate(comment.time)"
-                type="primary"
-              >
-                <div class="comment-content">
-                  <div class="comment-header">
-                    <span class="publisher-name">{{ comment.publisherName }}</span>
-                    <template v-if="comment.replyName">
-                      <span class="reply-to">回复</span>
-                      <span class="reply-name">{{ comment.replyName }}</span>
-                    </template>
-                  </div>
-                  <p class="comment-text">{{ comment.content }}</p>
-                </div>
-              </el-timeline-item>
-            </el-timeline>
-          </div>
-        </el-card>
       </el-col>
     </el-row>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import {
   getSpeechById,
   getSpitsBySpeechId,
-  getAudienceBySpeechId,
+  getSpeechData,
   type ReturnSpeech,
   type Spit,
+  type OrganizerData,
 } from '@/api/speech'
-import { getQuestionsById, type Question } from '@/api/question'
-import { getCommentsByQuestionId } from '@/api/comment'
-
-interface ReturnComment {
-  commentId: string
-  questionId: string
-  publisher: string
-  publisherName: string
-  replyId?: string // 标记为可选
-  replyName?: string // 标记为可选
-  time: Date
-  content: string
-}
+import { getQuestionsByTestId, getTestList, type Question, type test } from '@/api/question'
 
 const route = useRoute()
 const speechId = route.params.id as string
+
+// 添加计算属性来处理答题数据
+const answerDistributionData = computed(() => {
+  if (
+    !organizerData.value ||
+    !organizerData.value.userAnswers ||
+    organizerData.value.userAnswers.length === 0
+  ) {
+    return []
+  }
+
+  return organizerData.value.userAnswers.map((item) => ({
+    questionId: item.questionId,
+    description: item.description,
+    correctPercentage: item.correctPercentage, // 注意这里使用正确的字段名 CorrectPercentage
+  }))
+})
+
+// 组织者数据
+const organizerData = ref<OrganizerData | null>(null)
 
 // 演讲信息
 const speech = ref<ReturnSpeech>({
@@ -210,17 +164,17 @@ const speech = ref<ReturnSpeech>({
 // 听众数量
 const audienceCount = ref(0)
 
-// 题目列表
+// 题目列表 - 仍然需要保留，因为用于显示已发布题目数
 const questions = ref<Question[]>([])
+
+// 测试列表
+const tests = ref<test[]>([])
 
 // 平均正确率
 const averageCorrectRate = ref(0)
 
 // 吐槽列表
 const spitsList = ref<Spit[]>([])
-
-// 评论列表
-const comments = ref<ReturnComment[]>([])
 
 // 格式化日期
 const formatDate = (date: Date | undefined) => {
@@ -239,51 +193,48 @@ const getSpeechInfo = async () => {
   }
 }
 
-// 获取听众数量
-const getAudienceCount = async () => {
+// 获取测试列表
+const getTests = async () => {
   try {
-    const response = await getAudienceBySpeechId(speechId)
-    audienceCount.value = response.data.length
+    const response = await getTestList(speechId)
+    tests.value = response.data
+    // 获取所有测试的题目
+    await getQuestionsForTests()
   } catch (error) {
-    console.error('获取听众数量失败：', error)
-    ElMessage.error('获取听众数量失败')
+    console.error('获取测试列表失败：', error)
+    ElMessage.error('获取测试列表失败')
   }
 }
 
-// 获取题目列表
-const getQuestions = async () => {
+// 获取所有测试的题目
+const getQuestionsForTests = async () => {
   try {
-    const response = await getQuestionsById(speechId)
-    questions.value = response.data
-    // 获取每个题目的评论
-    await Promise.all(questions.value.map((question) => getQuestionComments(question.questionId)))
-  } catch (error) {
-    console.error('获取题目列表失败：', error)
-    ElMessage.error('获取题目列表失败')
-  }
-}
+    // 清空现有题目
+    questions.value = []
 
-// 获取题目评论
-const getQuestionComments = async (questionId: string) => {
-  try {
-    const response = await getCommentsByQuestionId(questionId)
-    // 处理返回的评论数据，确保可选字段存在
-    const processedComments = response.data.map((comment) => ({
-      ...comment,
-      replyId: comment.replyId || '',
-      replyName: comment.replyName || '',
-    }))
-    comments.value = [...comments.value, ...processedComments]
-  } catch (error) {
-    console.error('获取题目评论失败：', error)
-    ElMessage.error('获取题目评论失败')
-  }
-}
+    // 如果没有测试，直接返回
+    if (tests.value.length === 0) return
 
-// 刷新评论列表
-const refreshComments = async () => {
-  comments.value = []
-  await Promise.all(questions.value.map((question) => getQuestionComments(question.questionId)))
+    // 获取每个测试的题目并合并
+    const allQuestions = await Promise.all(
+      tests.value.map(async (test) => {
+        try {
+          const response = await getQuestionsByTestId(test.testId)
+          return response.data
+        } catch (error) {
+          console.error(`获取测试 ${test.testId} 的题目失败：`, error)
+          return []
+        }
+      }),
+    )
+
+    // 合并所有测试的题目
+    questions.value = allQuestions.flat()
+    console.log('获取到的题目数量:', questions.value.length)
+  } catch (error) {
+    console.error('获取题目失败：', error)
+    ElMessage.error('获取题目失败')
+  }
 }
 
 // 刷新吐槽列表
@@ -297,9 +248,26 @@ const refreshSpits = async () => {
   }
 }
 
+// 获取组织者数据
+const getOrganizerData = async () => {
+  try {
+    console.log('正在获取组织者数据，speechId:', speechId)
+    const response = await getSpeechData(speechId)
+    console.log('获取到的组织者数据:', response.data)
+    organizerData.value = response.data
+    // 更新统计数据
+    audienceCount.value = organizerData.value.audienceCount
+    averageCorrectRate.value = parseFloat(organizerData.value.averageAccuracy)
+    console.log('处理后的答题分布数据:', answerDistributionData.value)
+  } catch (error) {
+    console.error('获取组织者数据失败：', error)
+    ElMessage.error('获取组织者数据失败')
+  }
+}
+
 // 刷新所有数据
 const refreshData = async () => {
-  await Promise.all([getSpeechInfo(), getAudienceCount(), getQuestions(), refreshSpits()])
+  await Promise.all([getSpeechInfo(), getOrganizerData(), getTests(), refreshSpits()])
 }
 
 // 页面加载时获取数据
@@ -325,9 +293,7 @@ onMounted(() => {
 
 .speech-info-card,
 .statistics-card,
-.questions-card,
-.spits-card,
-.comments-card {
+.spits-card {
   margin-bottom: 20px;
 }
 
@@ -377,39 +343,42 @@ onMounted(() => {
   color: #909399;
 }
 
-.spits-list,
-.comments-list {
+/* 答题分布样式 */
+.answer-distribution {
+  margin-top: 15px;
+}
+
+.question-stats {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f5f7fa;
+  border-radius: 4px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.question-title {
+  font-weight: bold;
+}
+
+.correct-rate {
+  color: #67c23a;
+  font-weight: bold;
+}
+
+.spits-list {
   max-height: 400px;
   overflow-y: auto;
 }
 
-.spit-content,
-.comment-content {
+.spit-content {
   padding: 10px;
   background: #f5f7fa;
   border-radius: 4px;
 }
 
-.comment-header {
-  margin-bottom: 8px;
-}
-
-.publisher-name {
-  font-weight: bold;
-  color: #409eff;
-}
-
-.reply-to {
-  margin: 0 4px;
-  color: #909399;
-}
-
-.reply-name {
-  color: #409eff;
-}
-
-.spit-text,
-.comment-text {
+.spit-text {
   margin: 8px 0;
   color: #606266;
 }

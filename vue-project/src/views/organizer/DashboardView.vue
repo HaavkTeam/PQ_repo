@@ -45,15 +45,11 @@
               </el-tag>
             </template>
           </el-table-column>
+
           <el-table-column label="操作" width="200">
             <template #default="{ row }">
-              <el-button
-                v-if="row.status === 1"
-                type="primary"
-                size="small"
-                @click="enterLecture(row)"
-              >
-                进入演讲
+              <el-button type="primary" size="small" @click="enterLecture(row)">
+                {{ row.status === 1 ? '进入演讲' : '查看数据' }}
               </el-button>
               <el-button
                 type="danger"
@@ -254,7 +250,7 @@ const formatDate = (date: Date) => {
 
 // 进入演讲
 const enterLecture = (lecture: ReturnSpeech) => {
-  router.push(`/organizer/lecture?code=${lecture.speechId}`)
+  router.push(`/organizer/lecture/${lecture.speechId}`)
 }
 
 // 页面加载时初始化

@@ -6,6 +6,7 @@
         <el-avatar :size="64" src="https://placeholder.com/150" />
         <div class="user-details">
           <h3>{{ userInfo.username || '未知用户' }}</h3>
+          <p>用户ID：{{ userInfo.userId }}</p>
           <p>邮箱：{{ userInfo.email }}</p>
           <p>身份：教师</p>
           <p>主讲演讲次数：{{ lectures.length }}</p>
@@ -209,8 +210,22 @@ const handleJoinLecture = async () => {
     if (data === 'success') {
       ElMessage.success('成功加入演讲')
       joinDialogVisible.value = false
-      // 重新获取演讲列表
+
+      // 获取最新的演讲列表
       await fetchLectures()
+
+      // 找到刚刚加入的演讲（通常是最新的一个进行中的演讲）
+      const joinedLecture = lectures.value.find(
+        (lecture) =>
+          lecture.speechId === joinForm.code ||
+          (lecture.status === 1 && lecture.speechId.includes(joinForm.code)),
+      )
+
+      // 如果找到了演讲，自动跳转到演讲页面
+      if (joinedLecture) {
+        ElMessage.success('正在进入演讲：' + joinedLecture.title)
+        router.push(`/teacher/lecture/${joinedLecture.speechId}`)
+      }
     } else {
       ElMessage.error(data || '加入演讲失败')
     }
@@ -230,7 +245,7 @@ const handleEnterLecture = (lecture: ReturnSpeech) => {
   })
     .then(() => {
       ElMessage.success('正在进入演讲：' + lecture.title)
-      router.push(`/teacher/lecture?code=${lecture.speechId}`)
+      router.push(`/teacher/lecture/${lecture.speechId}`)
     })
     .catch(() => {
       // 取消操作

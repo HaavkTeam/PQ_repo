@@ -28,6 +28,10 @@ const router = createRouter({
           component: () => import('../views/student/DashboardView.vue'),
         },
         {
+          path: 'tests',
+          component: () => import('../views/student/TestListView.vue'),
+        },
+        {
           path: 'quiz',
           component: () => import('../views/student/QuizView.vue'),
         },
@@ -41,7 +45,7 @@ const router = createRouter({
           component: () => import('../views/organizer/DashboardView.vue'),
         },
         {
-          path: 'lecture',
+          path: 'lecture/:id', // 添加:id参数
           component: () => import('../views/organizer/LectureView.vue'),
         },
       ],
@@ -54,7 +58,7 @@ const router = createRouter({
           component: () => import('../views/teacher/DashboardView.vue'),
         },
         {
-          path: 'lecture',
+          path: 'lecture/:id',
           component: () => import('../views/teacher/LectureView.vue'),
         },
       ],
