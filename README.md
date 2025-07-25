@@ -43,7 +43,7 @@ spring.datasource.password=[密码]
 运行 Backend/src/main/java/org/pqproject/backend/BackendApplication.java
 
 ## 项目结构
-## 后端项目结构
+### 后端项目结构
 ```plaintext
 Backend/
 ├── .idea/                # IDEA 工程配置目录，存储代码索引、运行配置等
