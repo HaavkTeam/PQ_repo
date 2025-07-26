@@ -9,7 +9,7 @@
 - 持久层：Mybatis-plus
 - 数据库：MySQL
 
-## ⚠️后端推荐环境要求
+## ⚠️推荐环境要求
 - Java 17
 - python 3.7
 - Maven 3.6.3
